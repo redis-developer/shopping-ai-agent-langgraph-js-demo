@@ -1,4 +1,3 @@
-
 import OpenAI from 'openai';
 import CONFIG from '../../../config.js';
 

@@ -1,4 +1,3 @@
-// ai/grocery-ai-agent/tools.js
 import { tool } from "@langchain/core/tools";
 import { z } from "zod";
 import CONFIG from '../../../config.js';

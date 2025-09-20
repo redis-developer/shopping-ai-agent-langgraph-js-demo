@@ -181,7 +181,7 @@ class ShoppingChatApp {
                 <div class="cache-notice">
                     <i class="fas fa-clock"></i>
                     <span>${responseTime?.toFixed(3) || '0.000'}s</span>
-                    Served using Redis LangCache. <br> Turn off Smart Recall if you'd prefer a fresh response.</span>
+                    This seems familiar - we've pulled in an earlier response. No waiting in line!
                 </div>
             ` : '';
             

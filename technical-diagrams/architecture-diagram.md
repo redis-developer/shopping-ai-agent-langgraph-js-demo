@@ -1,75 +1,79 @@
-```mermaid
-%%{init: {'theme':'base', 'themeVariables': {'primaryColor': '#888888', 'primaryTextColor': '#000000', 'primaryBorderColor': '#888888', 'lineColor': '#888888'}}}%%
-graph TD
+flowchart TD
     %% User Layer
-    User["👤 User Request"]
+    User>"User Query"]
     
     %% LangGraph Agent Layer
-    subgraph LangGraph["🤖 LangGraph Grocery Agent"]
-        CacheCheck["Cache Check"]
-        ShoppingAgent["Shopping Agent"]
-        SaveCache["Save Cache"]
+    subgraph LangGraph["LangGraph Agent Orchestration"]
+        CacheCheck(("Cache Check?"))
+        ShoppingAgent(("Shopping Agent"))
+        SaveCache(("Cache response"))
+
+        %% Tools Layer
+        subgraph AITools["🔧 AI Tools"]
+            RecipeTool["Recipe Ingredients"]
+            SearchTool["Product Search"]
+            CartTool["Cart Management"]
+            AnswerTool["Direct Answer"]
+        end
     end
     
     %% Cache Layer
-    subgraph RedisCache["🔴 Redis Cache & Storage"]
+    subgraph RedisCache["Redis"]
         SemanticCache["Semantic Cache<br/>(LangCache)"]
         VectorStore["Vector Store<br/>(Product Embeddings)"]
-    end
-    
-    %% Tools Layer
-    subgraph AITools["🔧 AI Tools"]
-        RecipeTool["Recipe Ingredients"]
-        SearchTool["Product Search"]
-        CartTool["Cart Management"]
-        AnswerTool["Direct Answer"]
+        UserSession(User Session)
     end
     
     %% Services Layer
-    subgraph ServicesLayer["⚙️ Services Layer"]
+    subgraph ServicesLayer["Services"]
         CartService["Cart Service"]
         ProductService["Products Service"]
-        ChatService["Chat Service"]
+        ChatService["Chat / User / Profile Service"]
     end
     
-    %% Step numbers (with fill for visibility)
-    Step1[("1")]
-    Step2[("2")]
-    Step3[("3")]
-    Step4[("4")]
-    Step5[("5")]
-    Step6[("6")]
-    Step7[("7")]
-    
     %% Flow connections with step numbers
-    User --> Step1
-    Step1 --> LangGraph
-    CacheCheck --> Step2
-    Step2 --> RedisCache
-    ShoppingAgent --> Step3
-    Step3 --> AITools
-    AITools --> Step4
-    Step4 --> ServicesLayer
-    ServicesLayer --> Step5
-    Step5 --> RedisCache
-    SaveCache --> Step6
-    Step6 --> RedisCache
-    LangGraph --> Step7
-    Step7 --> User
+    User e1@--> |Step 1| CacheCheck
+    e1@{ animate: true }
+
+    SemanticCache --> |user query| CacheCheck
+    CacheCheck -.->|Hit| End((("Return response")))
+    CacheCheck -.->|Miss| ShoppingAgent
+
+    ChatService e2@--> |Step 2: retrieve context| ShoppingAgent
+    e2@{ animate: true }
+
+    ShoppingAgent e3@-.-> |Step 3: Process request| AITools
+    e3@{ animate: true }
+
+    ShoppingAgent e4@--> |Step 4: save context| ChatService
+    e4@{ animate: true }
+
+    ShoppingAgent e5@--> |Step 5| SaveCache
+    e5@{ animate: true }
+    SaveCache --> |user query + response| SemanticCache
+
+    ShoppingAgent e6@--> |Step 6: Send response| End
+    e6@{ animate: true }
     
     %% Internal connections
-    RecipeTool -.-> ProductService
-    SearchTool -.-> ProductService
-    CartTool -.-> CartService
-    AnswerTool -.-> ChatService
+    RecipeTool <-.-> ProductService
+    SearchTool <-.-> ProductService
+    CartTool <-.-> CartService
+
+    ProductService <-.-> VectorStore
+    CartService <-.-> UserSession
+    ChatService <-.-> UserSession
     
-    %% Step styling with black background and circular shape
-    classDef stepStyle fill:#000000,color:#ffffff,stroke:#000000,stroke-width:2px,font-weight:bold
+    classDef stepStyle fill:#eeeeee,color:#000000,stroke:#000000,stroke-width:2px,font-weight:bold
     classDef nodeStyle fill:transparent,color:#000000,stroke:#8a99a0,stroke-width:2px
-    classDef subgraphStyle fill:#ffffff,color:#000000,stroke:#8a99a0,stroke-width:1px
+    classDef subgraphStyle fill:transparent,color:#000000,stroke:#8a99a0,stroke-width:1px
     
-    %% Apply step styling to numbered circles
-    class Step1,Step2,Step3,Step4,Step5,Step6,Step7 stepStyle
-    class User,CacheCheck,ShoppingAgent,SaveCache,SemanticCache,VectorStore,RecipeTool,SearchTool,CartTool,AnswerTool,CartService,ProductService,ChatService nodeStyle
-    class LangGraph,RedisCache,AITools,ServicesLayer subgraphStyle
-```
+    classDef purple fill:transparent,color:#c795e3,stroke:#c795e3,stroke-width:2px, font-weight: bold, stroke-dasharray: 5 5
+    classDef red fill:transparent,color:#ff4438,stroke:#ff4438,stroke-width:2px, stroke-dasharray: 5 5
+    classDef blue fill:transparent,color:#80dbff,stroke:#80dbff,stroke-width:2px, font-weight: bold, stroke-dasharray: 5 5
+
+    class User,CacheCheck,ShoppingAgent,SaveCache,SemanticCache,VectorStore,UserSession,RecipeTool,SearchTool,CartTool,AnswerTool,CartService,ProductService,ChatService, nodeStyle
+    class End,LangGraph,RedisCache,AITools subgraphStyle
+    class LangGraph purple
+    class RedisCache red
+    class ServicesLayer blue

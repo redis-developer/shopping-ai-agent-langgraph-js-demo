@@ -142,7 +142,7 @@ async function visualizeGraph() {
     const image = await drawableGraph.drawMermaidPng();
     const imageBuffer = new Uint8Array(await image.arrayBuffer());
 
-    await fs.writeFile("ai-agent-graph.png", imageBuffer);
+    await fs.writeFile("technical-diagrams/ai-agent-graph.png", imageBuffer);
 }
 
 visualizeGraph();

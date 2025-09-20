@@ -1,4 +1,3 @@
-// scripts/load-products.js
 import { loadProductsFromCSV, checkRedisMemory } from '../services/products/data/product-loader.js';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';

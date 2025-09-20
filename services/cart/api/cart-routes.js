@@ -1,7 +1,5 @@
-// services/cart/api/cart-routes.js
 import { Router } from 'express';
 import { addItemToCart, getCart, removeItemFromCart, clearCart } from '../domain/cart-service.js';
-import { getProductById } from '../../products/domain/product-service.js';
 
 const router = Router();
 

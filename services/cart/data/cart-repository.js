@@ -1,4 +1,3 @@
-// service/data/cart-repository.js
 import { createClient } from 'redis';
 import CONFIG from '../../../config.js';
 import ProductRepository from '../../products/data/product-repository.js';

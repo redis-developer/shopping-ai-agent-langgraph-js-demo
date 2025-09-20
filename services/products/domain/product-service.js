@@ -1,4 +1,3 @@
-// services/products/domain/product-service.js
 import ProductRepository from '../data/product-repository.js';
 import { AppError, HttpStatusCode } from '../../../lib/errors.js';
 

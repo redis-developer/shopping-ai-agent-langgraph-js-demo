@@ -1,4 +1,3 @@
-// services/cart/domain/cart-service.js
 import CartRepository from '../data/cart-repository.js';
 
 const cartRepository = new CartRepository();

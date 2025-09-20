@@ -34,7 +34,7 @@ Redish is an AI-powered grocery shopping platform that combines Redis's speed wi
 ### Prerequisites
 
 - **OpenAI API Key**: [Create an API key](https://platform.openai.com/account/api-keys)
-- **LangCache API**: [Get LangCache credentials](https://redis.io/langcache/)
+- **Redis LangCache API**: [Get LangCache credentials](https://redis.io/langcache/)
 
 ### Clone this repository
 
@@ -127,7 +127,7 @@ Visit http://localhost:3000 in your browser (or use the port specified in `.env`
 
 ## Technical features
 
-- **Semantic Cache**: Similar queries return instantly using LangCache
+- **Semantic Cache**: Similar queries return instantly using Redis LangCache
 - **Vector Search**: Find products using AI-powered similarity search
 - **Redis as memory layer**: for fast data retrieval
 - **LangGraph Workflows**:  AI agent routing, tool selection
@@ -137,8 +137,7 @@ Visit http://localhost:3000 in your browser (or use the port specified in `.env`
 
 ## Architecture
 
-
-The grocery agent uses a LangGraph-powered AI agent that routes requests through specialized tools:
+The grocery agent uses a LangGraph-powered AI agent that routes requests through specialized tools.
 
 1. **Cache Check**: First checks Redis semantic cache for similar queries
 2. **AI Agent**: Routes to appropriate tools based on request type
@@ -146,6 +145,32 @@ The grocery agent uses a LangGraph-powered AI agent that routes requests through
 4. **Services Layer**: Product, cart, and chat services
 5. **Redis Storage**: Vector embeddings, semantic cache, and session data
 
+![Technical architecture](./technical-diagrams/architecture-overview.png)
+
+![Technical architecture - expanded](./technical-diagrams/mermaid-flowchart.svg)
+
+### Project architecture
+
+```
+services/
+  ├── products/                # Product Business Component
+  │   ├── api/                    # REST API endpoints
+  │   ├── domain/                 # Business logic
+  │   └── data/                   # Data access layer
+  ├── cart/                    # Cart Business Component
+  │   ├── api/
+  │   ├── domain/
+  │   └── data/
+  ├──chat/                     # Chat/Cache Business Component
+  │   ├── api/
+  │   ├── domain/
+  │   └── data/
+  ├── ai/grocery-ai-agent/     # AI Agent
+  │   ├── tools.js                # API/Interface Layer
+  │   ├── nodes.js                # Agent Logic
+  │   ├── index.js                # Orchestration
+  │   └── state/                  # Data Access
+```
 ---
 
 ## API Endpoints

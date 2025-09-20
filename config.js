@@ -5,8 +5,6 @@ if (!process.env.OPENAI_API_KEY) {
     console.warn('Warning: OPENAI_API_KEY is not defined in environment variables.');
 }
 
-// LangCache is always assumed to be available
-
 const CONFIG = {
     serverPort: process.env.SERVER_PORT || 3000,
     nodeEnv: process.env.NODE_ENV || 'development',
