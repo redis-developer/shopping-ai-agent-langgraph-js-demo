@@ -9,7 +9,7 @@ const client = await createClient({
 }).on('error', (err) => console.log('Redis Client Error', err))
   .connect();
 
-// LangCache is always available
+// Initialize LangCache client
 const langCache = new LangCache({
     serverURL: CONFIG.langcacheApiBaseUrl,
     cacheId: CONFIG.langcacheCacheId,
@@ -25,7 +25,7 @@ const langCache = new LangCache({
 export default class ChatRepository {
 
     /**
-     * Retrieve chat history from Redis
+     * Retrieve chat history
      * @param {string} sessionId
      * @param {string} chatId
      * @returns {Promise<ChatMessage[]>}
@@ -56,7 +56,7 @@ export default class ChatRepository {
     }
 
     /**
-     * Save chat history to Redis
+     * Save chat history
      * @param {string} sessionId
      * @param {string} chatId
      * @param {ChatMessage} chatMessage
@@ -80,7 +80,6 @@ export default class ChatRepository {
      * Search user query in langcache
      * @param {string} query
      * @param {string} [sessionId] - Optional session identifier to scope the search
-     * @returns {Promise<string|null>}
      */
     async findFromSemanticCache(query, sessionId) {
         const searchParams = {
@@ -142,5 +141,4 @@ export default class ChatRepository {
     
         return result.deletedEntriesCount;
     }
-    
 }

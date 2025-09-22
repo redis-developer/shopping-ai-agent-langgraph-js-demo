@@ -1,4 +1,3 @@
-// services/products/api/product-routes.js
 import { Router } from 'express';
 import { getProductById } from '../domain/product-service.js';
 

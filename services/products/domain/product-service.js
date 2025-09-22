@@ -1,5 +1,6 @@
 import ProductRepository from '../data/product-repository.js';
 import { AppError, HttpStatusCode } from '../../../lib/errors.js';
+import { generateEmbeddings } from '../../ai/helpers/embeddings.js';
 
 const productRepository = new ProductRepository();
 
@@ -8,10 +9,14 @@ const productRepository = new ProductRepository();
  * @param {string} query - Search query
  * @param {number} limit - Maximum number of results
  * @param {number} threshold - Similarity threshold
- * @returns {Promise<Array>} Array of products
  */
 export async function findProductsBySemanticSearch(query, limit = 8, threshold = 0.6) {
-    const products = await productRepository.semanticSearchProducts(query, limit, threshold);
+    // Generate embedding for the search query
+    const queryEmbeddings = await generateEmbeddings([query]);
+    const searchVector = queryEmbeddings[0];
+
+    // Use repository for pure data operations
+    const products = await productRepository.vectorSearchProducts(searchVector, limit, threshold);
     return products;
 }
 
@@ -24,17 +29,54 @@ export async function findProductsBySemanticSearch(query, limit = 8, threshold =
  * @param {number} searchParams.minRating - Minimum rating filter
  * @param {number} searchParams.limit - Maximum results
  * @param {boolean} searchParams.useSemanticSearch - Use semantic search
- * @returns {Promise<Array>} Array of products with metadata
  */
 export async function searchProducts({ query, category, maxPrice, minRating, limit = 8, useSemanticSearch = true }) {
-    const products = await productRepository.searchProducts({ 
-        query, 
-        category, 
-        maxPrice, 
-        minRating, 
-        limit,
-        useSemanticSearch
+    let products = [];
+
+    // Search strategy decision
+    if (query && useSemanticSearch) {
+        console.log('🧠 Using semantic search...');
+        products = await findProductsBySemanticSearch(query, limit * 2, 0.6); // Lower threshold, get more results
+    }
+
+    // Fallback to keyword search if semantic search returns few results
+    if (products.length < 3 && query) {
+        console.log('🔍 Supplementing with keyword search...');
+        const keywordResults = await productRepository.keywordSearchProducts({ query, category, maxPrice, minRating, limit });
+
+        // Merge results, avoiding duplicates
+        keywordResults.forEach(product => {
+            if (!products.find(p => p.id === product.id)) {
+                products.push(product);
+            }
+        });
+    }
+
+    // Apply filters
+    if (category) {
+        products = products.filter(p =>
+            p.category.toLowerCase().includes(category.toLowerCase())
+        );
+    }
+
+    if (maxPrice) {
+        products = products.filter(p => p.salePrice <= maxPrice);
+    }
+
+    if (minRating) {
+        products = products.filter(p => (p.rating || 0) >= minRating);
+    }
+
+    // Sort by relevance (semantic score or rating)
+    products.sort((a, b) => {
+        if (a.semanticScore && b.semanticScore) {
+            return b.semanticScore - a.semanticScore;
+        }
+        return (b.rating || 0) - (a.rating || 0);
     });
+
+    // Apply limit
+    products = products.slice(0, limit);
 
     // Structure the product data with navigation links
     const structuredProducts = products.map(product => ({
@@ -52,6 +94,7 @@ export async function searchProducts({ query, category, maxPrice, minRating, lim
         productUrl: `/product/${product.id}` // Add navigation URL
     }));
 
+    // Calculate summary metrics
     const totalCost = structuredProducts.reduce((sum, product) => sum + product.salePrice, 0);
 
     return {
@@ -63,76 +106,48 @@ export async function searchProducts({ query, category, maxPrice, minRating, lim
 }
 
 /**
- * Get ingredients for a recipe with product suggestions
- * @param {string} recipe - Recipe name
- * @param {Function} getIngredientsFromLLM - Function to get ingredients from LLM
- * @returns {Promise<Object>} Recipe ingredients with product suggestions
+ * Find products for a list of ingredient names
+ * @param {Array<string>} ingredientNames - Array of ingredient names
+ * @returns {Promise<Object>} Ingredient products with suggestions
  */
-export async function getRecipeIngredientsWithProducts(recipe, getIngredientsFromLLM) {
-    // Get ingredients from LLM
-    const ingredientsData = await getIngredientsFromLLM(recipe);
-    
-    if (!ingredientsData.ingredients) {
-        throw new AppError(
-            'LLM_NO_INGREDIENTS',
-            'No ingredients received from LLM',
-            HttpStatusCode.BAD_REQUEST,
-            'Could not extract ingredients from the recipe. Please try rephrasing your request.'
-        );
-    }
+export async function findProductsForIngredients(ingredientNames) {
+    console.log(`🚀 Searching for ${ingredientNames.length} ingredients in parallel...`);
 
-    // OPTIMIZATION: Search for all ingredients in parallel for speed
-    const essentialIngredients = ingredientsData.ingredients.filter(ing => ing.essential).slice(0, 6);
-
-    console.log(`🚀 Searching for ${essentialIngredients.length} ingredients in parallel...`);
-    
     // Parallel product searches for all ingredients
-    const searchPromises = essentialIngredients.map(async (ingredient) => {
-        try {
-            const products = await findProductsBySemanticSearch(ingredient.name, 1, 0.6);
-            
-            if (products.length > 0) {
-                const product = products[0];
-                
-                return {
-                    ingredient: ingredient.name,
-                    quantity: ingredient.quantity,
-                    suggestedProduct: {
-                        id: product.id,
-                        name: product.name,
-                        brand: product.brand || 'Generic',
-                        price: product.salePrice,
-                        category: product.category,
-                        rating: product.rating,
-                    }
-                };
-            } else {
-                console.log(`❌ No product found for: ${ingredient.name}`);
-                return {
-                    ingredient: ingredient.name,
-                    quantity: ingredient.quantity,
-                    suggestedProduct: null
-                };
-            }
-        } catch (searchError) {
-            console.warn(`❌ Could not search for ${ingredient.name}:`, searchError);
+    const searchPromises = ingredientNames.map(async (ingredientName) => {
+        const products = await findProductsBySemanticSearch(ingredientName, 1, 0.6);
+
+        if (products.length > 0) {
+            const product = products[0];
+
             return {
-                ingredient: ingredient.name,
-                quantity: ingredient.quantity,
+                ingredient: ingredientName,
+                suggestedProduct: {
+                    id: product.id,
+                    name: product.name,
+                    brand: product.brand || 'Generic',
+                    price: product.salePrice,
+                    category: product.category,
+                    rating: product.rating,
+                }
+            };
+        } else {
+            console.log(`❌ No product found for: ${ingredientName}`);
+            return {
+                ingredient: ingredientName,
                 suggestedProduct: null
             };
         }
     });
-    
+
     // Wait for all searches to complete in parallel
     const ingredientProducts = await Promise.all(searchPromises);
     console.log(`🎯 Completed ${ingredientProducts.length} ingredient searches in parallel`);
 
     return {
-        recipe: ingredientsData.recipe || recipe,
-        totalIngredients: essentialIngredients.length,
+        totalIngredients: ingredientNames.length,
         ingredientProducts: ingredientProducts,
-        message: "Here are the essential ingredients with quick product suggestions!"
+        message: "Here are the ingredients with quick product suggestions!"
     };
 }
 

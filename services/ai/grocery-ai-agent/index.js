@@ -1,4 +1,3 @@
-// service/domain/ai-agent/grocery-index.js
 import * as fs from "node:fs/promises";
 import { StateGraph, START, END } from "@langchain/langgraph";
 import { GroceryAgentState } from "./state.js";
@@ -31,6 +30,8 @@ export const createGroceryShoppingAgent = () => {
         .addEdge("save_grocery_cache", END)
 
         .compile();
+
+    visualizeGraph(graph);
     
     return graph;
 };
@@ -80,7 +81,6 @@ export function getGroceryExecutionSummary(graphResult) {
 
 /**
  * Main function to get grocery shopping reply
- * This replaces the getReplyFromAgent function in your chat service
  */
 export async function getGroceryShoppingReply(sessionId, chatId, message, useSmartRecall) {
     try {
@@ -137,12 +137,10 @@ export async function getGroceryShoppingReply(sessionId, chatId, message, useSma
     }
 }
 
-async function visualizeGraph() {
-    const drawableGraph = await groceryGraph.getGraphAsync();
+async function visualizeGraph(graph) {
+    const drawableGraph = await graph.getGraphAsync();
     const image = await drawableGraph.drawMermaidPng();
     const imageBuffer = new Uint8Array(await image.arrayBuffer());
 
     await fs.writeFile("technical-diagrams/ai-agent-graph.png", imageBuffer);
 }
-
-visualizeGraph();

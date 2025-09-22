@@ -1,4 +1,3 @@
-// service/domain/grocery-ai-agent/nodes.js
 import { ChatOpenAI } from "@langchain/openai";
 import { AIMessage } from "@langchain/core/messages";
 import { groceryTools } from "./tools.js";
@@ -6,7 +5,44 @@ import { checkSemanticCache, saveToSemanticCache } from "../../chat/domain/chat-
 import CONFIG from "../../../config.js";
 
 /**
- * Grocery Shopping Agent Node
+ * Node 1: Cache Check for Grocery Shopping
+ */
+export const groceryCacheCheck = async (state) => {
+    const lastUserMessage = state.messages.findLast(m => m.getType() === "human");
+    const userQuery = lastUserMessage?.content || "";
+    
+    console.log(`🔍 Checking semantic cache for: "${userQuery.substring(0, 50)}..."`);
+    
+    try {
+        const cachedResult = await checkSemanticCache(userQuery);
+
+        if (cachedResult) {
+            console.log("🎯 Semantic cache HIT - returning previous response");
+            return {
+                cacheStatus: "hit",
+                result: cachedResult,
+                messages: [...state.messages, new AIMessage(cachedResult)],
+                sessionId: state.sessionId
+            };
+        }
+        
+        console.log("❌ Semantic cache MISS - proceeding to agent");
+        return { 
+            cacheStatus: "miss",
+            sessionId: state.sessionId
+        };
+        
+    } catch (error) {
+        console.error("Error checking semantic cache:", error);
+        return {
+            cacheStatus: "miss",
+            sessionId: state.sessionId
+        };
+    }
+};
+
+/**
+ * Node 2: Grocery Shopping Agent Node
  * 
  * Specialized agent with improved tool selection for faster responses
  */
@@ -100,6 +136,7 @@ Make responses helpful, fast, and easy to interact with!`;
 
                 // Find and invoke the appropriate tool
                 const tool = groceryTools.find(t => t.name === toolCall.name);
+
                 if (tool) {
                     // Add sessionId to tool arguments if needed
                     const toolArgs = { ...toolCall.args };
@@ -149,41 +186,86 @@ Make responses helpful, fast, and easy to interact with!`;
 };
 
 /**
- * Cache Check for Grocery Shopping
+ * Node 3: Save Grocery Results to Cache with LLM-based GDPR sanitization
  */
-export const groceryCacheCheck = async (state) => {
-    const lastUserMessage = state.messages.findLast(m => m.getType() === "human");
-    const userQuery = lastUserMessage?.content || "";
-    
-    console.log(`🔍 Checking semantic cache for: "${userQuery.substring(0, 50)}..."`);
-    
-    try {
-        const cachedResult = await checkSemanticCache(userQuery);
-
-        if (cachedResult) {
-            console.log("🎯 Semantic cache HIT - returning previous response");
-            return {
-                cacheStatus: "hit",
-                result: cachedResult,
-                messages: [...state.messages, new AIMessage(cachedResult)],
-                sessionId: state.sessionId
-            };
-        }
-        
-        console.log("❌ Semantic cache MISS - proceeding to agent");
-        return { 
-            cacheStatus: "miss",
-            sessionId: state.sessionId
-        };
-        
-    } catch (error) {
-        console.error("Error checking semantic cache:", error);
-        return {
-            cacheStatus: "miss",
-            sessionId: state.sessionId
-        };
+export const saveGroceryToCache = async (state) => {
+    if (!state.result) {
+        return {};
     }
+
+    const lastUserMessage = state.messages.findLast(m => m.getType() === "human");
+    const query = lastUserMessage?.content || "";
+
+    // Determine TTL using smart logic
+    const cacheTTL = determineCacheTTL(query);
+
+    // Don't cache if TTL is 0 (e.g., cart operations)
+    if (cacheTTL === 0) {
+        console.log("⏭️ Skipping cache for dynamic/personal operation");
+        return {};
+    }
+
+    try {
+        // Use LLM-based GDPR sanitization
+        const [sanitizedQuery, sanitizedResponse ] =  await Promise.all([
+            sanitizeForGDPR(query),
+            sanitizeForGDPR(state.result)
+        ]);
+
+        console.log(`💾 Saving sanitized query to cache: "${sanitizedQuery.substring(0, 50)}..."`);
+
+        await saveToSemanticCache(
+            sanitizedQuery,
+            sanitizedResponse,
+            cacheTTL,
+            state.sessionId
+        );
+
+        console.log(`💾 Cached with TTL: ${cacheTTL}ms (${Math.round(cacheTTL / (60 * 60 * 1000))}h) - GDPR compliant`);
+
+    } catch (error) {
+        console.error('Error in GDPR-compliant caching:', error);
+        // Don't fail the whole request if caching fails
+    }
+
+    return {};
 };
+
+/**
+ * Determine cache TTL based on query type
+ */
+function determineCacheTTL(query) {
+    if (!query || typeof query !== 'string') {
+        return 6 * 60 * 60 * 1000; // 6 hours default
+    }
+
+    const lowerQuery = query.toLowerCase();
+
+    // Don't cache cart operations (they're user-specific and dynamic)
+    if (lowerQuery.includes('cart') ||
+        lowerQuery.includes('add to') ||
+        lowerQuery.includes('remove')) {
+        return 0; // Don't cache
+    }
+
+    // Longer TTL for recipe/ingredient queries (they don't change often)
+    if (lowerQuery.includes('recipe') ||
+        lowerQuery.includes('ingredients') ||
+        lowerQuery.includes('how to make') ||
+        lowerQuery.includes('need for') ||
+        lowerQuery.includes('to make')) {
+        return 24 * 60 * 60 * 1000; // 24 hours
+    }
+
+    // Shorter TTL for price/shopping queries (prices change)
+    if (lowerQuery.includes('price') ||
+        lowerQuery.includes('cost') ||
+        lowerQuery.includes('cheap')) {
+        return 2 * 60 * 60 * 1000; // 2 hours
+    }
+
+    return 6 * 60 * 60 * 1000; // 6 hours default
+}
 
 /**
  * LLM-based GDPR-compliant data sanitization
@@ -228,84 +310,3 @@ Return only the sanitized text with no additional explanation:`;
         return text; // Fallback to original text if LLM fails
     }
 }
-
-/**
- * Determine cache TTL based on query type
- */
-function determineCacheTTL(query) {
-    if (!query || typeof query !== 'string') {
-        return 6 * 60 * 60 * 1000; // 6 hours default
-    }
-
-    const lowerQuery = query.toLowerCase();
-
-    // Don't cache cart operations (they're user-specific and dynamic)
-    if (lowerQuery.includes('cart') ||
-        lowerQuery.includes('add to') ||
-        lowerQuery.includes('remove')) {
-        return 0; // Don't cache
-    }
-
-    // Longer TTL for recipe/ingredient queries (they don't change often)
-    if (lowerQuery.includes('recipe') ||
-        lowerQuery.includes('ingredients') ||
-        lowerQuery.includes('how to make') ||
-        lowerQuery.includes('need for') ||
-        lowerQuery.includes('to make')) {
-        return 24 * 60 * 60 * 1000; // 24 hours
-    }
-
-    // Shorter TTL for price/shopping queries (prices change)
-    if (lowerQuery.includes('price') ||
-        lowerQuery.includes('cost') ||
-        lowerQuery.includes('cheap')) {
-        return 2 * 60 * 60 * 1000; // 2 hours
-    }
-
-    return 6 * 60 * 60 * 1000; // 6 hours default
-}
-
-/**
- * Save Grocery Results to Cache with LLM-based GDPR sanitization
- */
-export const saveGroceryToCache = async (state) => {
-    if (!state.result) {
-        return {};
-    }
-
-    const lastUserMessage = state.messages.findLast(m => m.getType() === "human");
-    const query = lastUserMessage?.content || "";
-
-    // Determine TTL using smart logic
-    const cacheTTL = determineCacheTTL(query);
-
-    // Don't cache if TTL is 0 (e.g., cart operations)
-    if (cacheTTL === 0) {
-        console.log("⏭️ Skipping cache for dynamic/personal operation");
-        return {};
-    }
-
-    try {
-        // Use LLM-based GDPR sanitization
-        const sanitizedQuery = await sanitizeForGDPR(query);
-        const sanitizedResponse = await sanitizeForGDPR(state.result);
-
-        console.log(`💾 Saving sanitized query to cache: "${sanitizedQuery.substring(0, 50)}..."`);
-
-        await saveToSemanticCache(
-            sanitizedQuery,
-            sanitizedResponse,
-            cacheTTL,
-            state.sessionId
-        );
-
-        console.log(`💾 Cached with TTL: ${cacheTTL}ms (${Math.round(cacheTTL / (60 * 60 * 1000))}h) - GDPR compliant`);
-
-    } catch (error) {
-        console.error('Error in GDPR-compliant caching:', error);
-        // Don't fail the whole request if caching fails
-    }
-
-    return {};
-};
-

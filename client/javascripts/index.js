@@ -517,7 +517,6 @@ class ShoppingChatApp {
     }
 }
 
-
 // Initialize the app and make it globally accessible
 document.addEventListener('DOMContentLoaded', () => {
     window.shoppingApp = new ShoppingChatApp();

@@ -4,7 +4,7 @@ import { readFileSync } from 'fs';
 import { parse } from 'csv-parse/sync';
 import CONFIG from '../../../config.js';
 
-import { generateEmbeddings } from '../domain/helpers.js';
+import { generateEmbeddings } from '../../ai/helpers/embeddings.js';
 
 const client = await createClient({
     url: CONFIG.redisUrl,

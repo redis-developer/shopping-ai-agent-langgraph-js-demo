@@ -1,4 +1,3 @@
-// services/chat/api/chat-routes.js
 import { Router } from 'express';
 import { endUserSession, getReplyFromGroceryAgent } from '../domain/chat-service.js';
 
