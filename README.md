@@ -24,7 +24,7 @@ Redish is an AI-powered grocery shopping platform that combines Redis's speed wi
 - **Node.js** + **Express** (Backend API)
 - **Redis** (Product store, conversational history, and semantic caching with Redis LangCache)
 - **LangGraph** (AI workflow orchestration)
-- **OpenAI API** (GPT-4 for intelligent responses)
+- **AWS Bedrock** (Claude 3.5 Sonnet for conversational AI + Titan Text Embeddings V2 for vector search)
 - **HTML + CSS + Vanilla JS** (Frontend)
 
 ---
@@ -33,7 +33,10 @@ Redish is an AI-powered grocery shopping platform that combines Redis's speed wi
 
 ### Prerequisites
 
-- **OpenAI API Key**: [Create an API key](https://platform.openai.com/account/api-keys)
+**Required:**
+- **AWS Bedrock** (for LLM and embeddings): [Set up AWS credentials](https://docs.aws.amazon.com/bedrock/latest/userguide/getting-started.html)
+
+**Required:**
 - **Redis LangCache API**: [Get LangCache credentials](https://redis.io/langcache/)
 
 ### Clone this repository
@@ -51,17 +54,28 @@ Create a `.env` file at the root:
 APP_NAME="Redish"
 SERVER_PORT=3000
 
-OPENAI_API_KEY=your_openai_api_key
+# LLM Provider Configuration
 
+# AWS Bedrock Configuration (required for LLM and embeddings)
+BEDROCK_AWS_ACCESS_KEY_ID=your_aws_access_key_id
+BEDROCK_AWS_SECRET_ACCESS_KEY=your_aws_secret_access_key
+BEDROCK_AWS_REGION=us-east-1
+BEDROCK_MODEL_ID="anthropic.claude-3-5-sonnet-20241022-v2:0"
+
+# Bedrock Guardrails Configuration (optional - for content safety)
+BEDROCK_CONVERSATION_GUARDRAIL_ID=4icw4uthyebe
+BEDROCK_CACHE_GUARDRAIL_ID=g7t10xfo69kp
+BEDROCK_GUARDRAIL_VERSION=1
+
+# Redis Configuration
 REDIS_URL=your_redis_connection_string
 
+# Redis LangCache Configuration (for semantic caching)
 LANGCACHE_API_KEY="your_langcache_api_key"
 LANGCACHE_API_BASE_URL="your_langcache_api_base_url"
 LANGCACHE_CACHE_ID="your_langcache_cache_id"
 
-MODEL_NAME="gpt-4o-mini"
-
-# For tracing with Langsmith
+# For tracing with Langsmith (optional)
 LANGSMITH_TRACING="true"
 LANGSMITH_ENDPOINT="your_langsmith_endpoint"
 LANGSMITH_API_KEY="your_langsmith_api_key"
@@ -90,7 +104,14 @@ LANGSMITH_PROJECT="your_langsmith_project"
 
 2. Load sample grocery data:
    ```bash
+   # Load products (incremental - adds to existing data)
    npm run load-products
+
+   # Fresh start (drops existing index and data)
+   npm run load-products -- --drop
+
+   # Custom parameters with fresh start
+   npm run load-products -- --drop products.csv 100 2000
    ```
 
 3. Start the server:
@@ -145,9 +166,9 @@ The grocery agent uses a LangGraph-powered AI agent that routes requests through
 4. **Services Layer**: Product, cart, and chat services
 5. **Redis Storage**: Vector embeddings, semantic cache, and session data
 
-![Technical architecture](./technical-diagrams/architecture-overview.png)
+![Technical architecture](./docs/technical-diagrams/architecture-overview.png)
 
-![Technical architecture - expanded](./technical-diagrams/mermaid-flowchart.svg)
+![Technical architecture - expanded](./docs/technical-diagrams/mermaid-flowchart.svg)
 
 ### Project architecture
 

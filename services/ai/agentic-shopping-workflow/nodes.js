@@ -1,4 +1,4 @@
-import { ChatOpenAI } from "@langchain/openai";
+import { ChatBedrockConverse } from "@langchain/aws";
 import { AIMessage } from "@langchain/core/messages";
 import { groceryTools } from "./tools.js";
 import { checkSemanticCache, saveToSemanticCache } from "../../chat/domain/chat-service.js";
@@ -42,15 +42,80 @@ export const queryCacheCheck = async (state) => {
 };
 
 /**
- * Node 2: Personal Shopper Agent
+ * Node 2: Front Desk Agent
+ *
+ * Simple content safety filter that passes user queries directly to guardrails
+ * AWS guardrails handle content filtering and topic restrictions
+ * Approved requests pass through to personal shopper agent
+ */
+export const frontDeskAgent = async (state) => {
+    console.log('🏢 Front desk screening request for content safety...');
+
+    const model = new ChatBedrockConverse({
+        model: CONFIG.bedrockModelId,
+        region: CONFIG.awsRegion,
+        credentials: {
+            accessKeyId: CONFIG.awsAccessKeyId,
+            secretAccessKey: CONFIG.awsSecretAccessKey
+        },
+        temperature: 0.1,
+        guardrailConfig: {
+            guardrailIdentifier: CONFIG.bedrockConversationGuardrailId,
+            guardrailVersion: CONFIG.bedrockGuardrailVersion,
+            enabled: "enabled_full"
+        }
+    });
+
+    const lastUserMessage = state.messages.findLast(m => m.getType() === "human");
+    const userQuery = lastUserMessage?.content || "";
+
+    console.log(`🔍 Front desk screening query: "${userQuery.substring(0, 50)}..."`);
+
+    // Simple approach - just pass the message directly to trigger guardrail evaluation
+    const response = await model.invoke(userQuery);
+
+    // Check if guardrail intervened
+    if (response.response_metadata?.stopReason === "guardrail_intervened") {
+        console.log('🛡️ Front desk blocked irrelevant query - using default response');
+        console.log('Response metadata:', response.response_metadata);
+
+        return {
+            result: response.content, // Use AWS default guardrail response
+            messages: [...state.messages, new AIMessage(response.content)],
+            guardrailTestResult: "blocked",
+            guardrailBlockReason: "Content blocked by guardrail",
+            sessionId: state.sessionId,
+            userMessage: userQuery
+        };
+    }
+
+    console.log('✅ Front desk approved - directing to shopping assistant');
+
+    return {
+        ...state,
+        guardrailTestResult: "passed",
+        userMessage: userQuery // Ensure userMessage is set for downstream nodes
+    };
+};
+
+/**
+ * Node 3: Shopping Agent Node
  *
  * Specialized agent with tools for shopping-related tasks
  */
 export const personalShopperAgent = async (state) => {
-    const model = new ChatOpenAI({ 
+    const model = new ChatBedrockConverse({
+        model: CONFIG.bedrockModelId,
+        region: CONFIG.awsRegion,
+        credentials: {
+            accessKeyId: CONFIG.awsAccessKeyId,
+            secretAccessKey: CONFIG.awsSecretAccessKey
+        },
         temperature: 0.1,
-        model: CONFIG.modelName, 
-        apiKey: CONFIG.openAiApiKey 
+        guardrails: {
+            guardrailIdentifier: CONFIG.bedrockConversationGuardrailId,
+            guardrailVersion: CONFIG.bedrockGuardrailVersion
+        }
     });
 
     const systemPrompt = `You are a helpful grocery shopping assistant. You have access to specialized tools that return JSON data.
@@ -114,7 +179,7 @@ Make responses helpful, fast, and easy to interact with!`;
             currentMessages.push(response);
 
             if (!response.tool_calls || response.tool_calls.length === 0) {
-                console.log("🛒 Grocery agent finished with direct response");
+                console.log("🛒 Shopping agent finished with response");
                 
                 return {
                     result: response.content,
@@ -128,7 +193,7 @@ Make responses helpful, fast, and easy to interact with!`;
             for (const toolCall of response.tool_calls) {
                 let toolResult;
                 
-                console.log(`🔧 Grocery agent using tool: ${toolCall.name}`);
+                console.log(`🔧 Shopping agent using tool: ${toolCall.name}`);
                 toolsUsed.push(toolCall.name);
 
                 // Find and invoke the appropriate tool
@@ -172,10 +237,12 @@ Make responses helpful, fast, and easy to interact with!`;
             }
         }
     } catch (error) {
-        console.error("❌ Grocery shopping agent error:", error);
+        console.error("❌ Personal shopper agent error:", error);
+        const fallbackMessage = "I apologize, but I'm having trouble with your grocery request right now. Please try asking about recipe ingredients, searching for products, or managing your cart!";
+        
         return {
-            result: "I apologize, but I'm having trouble with your grocery request right now. Please try asking about recipe ingredients, searching for products, or managing your cart!",
-            messages: [...state.messages, new AIMessage("I apologize, but I'm having trouble with your grocery request right now. Please try asking about recipe ingredients, searching for products, or managing your cart!")],
+            result: fallbackMessage,
+            messages: [...state.messages, new AIMessage(fallbackMessage)],
             toolsUsed: ["error"],
             sessionId: state.sessionId
         };
@@ -203,13 +270,13 @@ export const processWorkOutputWithCaching = async (state) => {
     }
 
     try {
-        // Use LLM-based GDPR sanitization
+        // Use data compliance agent for regulatory requirements
         const [sanitizedQuery, sanitizedResponse ] =  await Promise.all([
             dataComplianceAgent(query),
             dataComplianceAgent(state.result)
         ]);
 
-        console.log(`💾 Saving sanitized query to cache: "${sanitizedQuery.substring(0, 50)}..."`);
+        console.log(`Saving sanitized query to cache: "${sanitizedQuery.substring(0, 50)}..."`);
 
         await saveToSemanticCache(
             sanitizedQuery,
@@ -266,45 +333,80 @@ function determineCacheTTL(query) {
 }
 
 /**
- * LLM-based GDPR-compliant data sanitization
- * Uses AI to intelligently remove personal information while preserving the core query
+ * Data compliance agent for regulatory requirements (GDPR, privacy, security)
+ * Uses AWS guardrails at input level to detect PII, then cleans up placeholders
  */
 async function dataComplianceAgent(text) {
     if (!text || typeof text !== 'string') return text;
 
-    try {
-        const model = new ChatOpenAI({
-            temperature: 0,
-            model: CONFIG.modelName,
-            apiKey: CONFIG.openAiApiKey
-        });
+    const placeholderRemovalPrompt = `You are a text cleanup specialist. Your task is to remove any placeholder text completely and make the text grammatically coherent while preserving everything else.
 
-        const sanitizationPrompt = `You are a GDPR compliance assistant. Your task is to remove or anonymize any personal information from the given text while preserving the core meaning and context.
+INSTRUCTIONS:
+1. Remove all placeholder tokens completely: [NAME], [EMAIL], [PHONE], [ADDRESS], [CREDIT_CARD], [SSN], [PII], etc.
+2. Fix grammar and sentence structure to make the result natural
+3. Preserve ALL food, grocery, cooking, and recipe-related content
+4. IMPORTANT: Keep all food-related terms, product IDs, grocery items, cooking terms, brand names, and the core question and intent intact.
+5. Make the result sound conversational and natural
+6. Return ONLY the cleaned text - no explanations, notes, or additional commentary
 
-Remove or replace the following types of personal information:
-- Names (first names, last names, usernames)
-- Email addresses
-- Phone numbers
-- Addresses (street addresses, zip codes)
-- Credit card numbers, SSNs, or other ID numbers
-- Any other personally identifiable information
+PLACEHOLDER REMOVAL EXAMPLES:
 
-IMPORTANT: Keep all food-related terms, product IDs, grocery items, cooking terms, brand names, and the core question intact. Only remove personal identifiers.
+Input: "Hi [NAME], my email is [EMAIL]. I need pasta ingredients."
+Output: "I need pasta ingredients."
 
-Examples:
-- "Hi, my name is John, I want butter chicken ingredients" → "I want butter chicken ingredients"
-- "I'm Sarah and I live at 123 Main St, what's good for pasta?" → "what's good for pasta?"
-- "My email is test@email.com, show me organic apples" → "show me organic apples"
+Input: Hi [NAME], here are the ingredients you'll need for a basic pasta dish with suggested products:\n\n1. Pasta (1 pound):\n**Durum Wheat Pasta- Penne Rigate** by Barilla - ₹598 (ID: 786) [🛒 Add] [👁️ Details]\n\n2. Parmesan Cheese (1/2 cup):\n**Parmesan Grana Padano D.O.P Cheese - Diced** by Fresho Signature - ₹239.40 (ID: 1574) [🛒 Add] [👁️ Details]\n\n
+Output: "Here are the ingredients you'll need for a basic pasta dish with suggested products:\n\n1. Pasta (1 pound):\n**Durum Wheat Pasta- Penne Rigate** by Barilla - ₹598 (ID: 786) [🛒 Add] [👁️ Details]\n\n2. Parmesan Cheese (1/2 cup):\n**Parmesan Grana Padano D.O.P Cheese - Diced** by Fresho Signature - ₹239.40 (ID: 1574) [🛒 Add] [👁️ Details]\n\n
 
-Text to sanitize: "${text}"
+Input: "I'm [NAME] from [ADDRESS], what's good for dinner?"
+Output: "What's good for dinner?"
 
-Return only the sanitized text with no additional explanation:`;
+Input: "My grandmother [NAME]'s famous lasagna recipe needs ricotta cheese."
+Output: "This famous lasagna recipe needs ricotta cheese."
 
-        const response = await model.invoke(sanitizationPrompt);
-        return response.content.trim();
+Input: "Call me at [PHONE] about organic tomatoes and free-range chicken."
+Output: "I'm interested in organic tomatoes and free-range chicken."
 
-    } catch (error) {
-        console.error('Error in LLM sanitization, using original text:', error);
-        return text; // Fallback to original text if LLM fails
+Input: "My card [CREDIT_CARD] was charged for groceries. I bought milk, bread, and eggs."
+Output: "My credit card was charged for groceries. I bought milk, bread, and eggs."
+
+Input: "I'm hosting a party for my friend [NAME] at [ADDRESS]. Need ingredients for 20 people."
+Output: "Need ingredients for 20 people."
+
+Input: "My mom [NAME] taught me this Uncle Ben's rice recipe."
+Output: "I learned this Uncle Ben's rice recipe."
+
+Text with placeholders: "${text}"
+
+Clean text:`;
+    // PII redaction model with guardrails for input-level PII detection and placeholder cleanup
+    const piiRedactionModel = new ChatBedrockConverse({
+        model: CONFIG.bedrockModelId,
+        region: CONFIG.awsRegion,
+        credentials: {
+            accessKeyId: CONFIG.awsAccessKeyId,
+            secretAccessKey: CONFIG.awsSecretAccessKey
+        },
+        temperature: 0,
+        guardrailConfig: {
+            guardrailIdentifier: CONFIG.bedrockCacheGuardrailId,
+            guardrailVersion: CONFIG.bedrockGuardrailVersion,
+            enabled: "enabled_full"
+        }
+    });
+
+    // The guardrail will automatically redact PII in the input before the model sees it
+    const response = await piiRedactionModel.invoke([
+        {
+            role: "user",
+            content: placeholderRemovalPrompt
+        }
+    ]);
+
+    // Check if guardrail intervened
+    if (response.response_metadata?.stopReason === "guardrail_intervened") {
+        console.log('🛡️ PII content detected and cleaned by guardrails during data compliance processing');
     }
+
+    const cleanedText = response.content.trim();
+    return cleanedText;
 }

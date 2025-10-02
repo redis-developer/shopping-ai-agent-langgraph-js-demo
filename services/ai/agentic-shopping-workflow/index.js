@@ -4,7 +4,7 @@ import { StateGraph, START, END } from "@langchain/langgraph";
 import { HumanMessage, AIMessage } from "@langchain/core/messages";
 
 import { ShoppingAgentState } from "./state.js";
-import { queryCacheCheck, personalShopperAgent, processWorkOutputWithCaching } from "./nodes.js";
+import { queryCacheCheck, frontDeskAgent, personalShopperAgent, processWorkOutputWithCaching } from "./nodes.js";
 
 import ChatRepository from "../../chat/data/chat-repository.js";
 
@@ -22,12 +22,16 @@ const chatRepository = new ChatRepository();
 export const createAgenticAIShoppingWorkflow = () => {
     const graph = new StateGraph(ShoppingAgentState)
         .addNode("query_cache_check", queryCacheCheck)
+        .addNode("front_desk_agent", frontDeskAgent)
         .addNode("personal_shopper_agent", personalShopperAgent)
         .addNode("process_work_output_with_caching", processWorkOutputWithCaching)
 
         .addEdge(START, "query_cache_check")
         .addConditionalEdges("query_cache_check", (state) => {
-            return state.cacheStatus === "hit" ? END : "personal_shopper_agent";
+            return state.cacheStatus === "hit" ? END : "front_desk_agent";
+        })
+        .addConditionalEdges("front_desk_agent", (state) => {
+            return state.guardrailTestResult === "blocked" ? "process_work_output_with_caching" : "personal_shopper_agent";
         })
         .addEdge("personal_shopper_agent", "process_work_output_with_caching")
         .addEdge("process_work_output_with_caching", END)
@@ -45,6 +49,7 @@ export function getWorkflowExecutionSummary(graphResult) {
     const summary = {
         toolsUsed: graphResult.toolsUsed || ["none"],
         cacheStatus: graphResult.cacheStatus || "miss",
+        guardrailTestResult: graphResult.guardrailTestResult || "not-tested",
         finalResult: graphResult.result,
         sessionId: graphResult.sessionId,
         productsFound: graphResult.foundProducts?.length || 0
@@ -53,7 +58,9 @@ export function getWorkflowExecutionSummary(graphResult) {
     console.log("\n🛒 GROCERY SHOPPING EXECUTION SUMMARY:");
     console.log(`Session: ${summary.sessionId}`);
     console.log(`Cache: ${summary.cacheStatus === "hit" ? "🎯 HIT" : "❌ MISS"}`);
-    
+    console.log(`Front Desk: ${summary.guardrailTestResult === "passed" ? "✅ APPROVED" :
+                               summary.guardrailTestResult === "blocked" ? "🛡️ BLOCKED" : "⏭️ SKIPPED"}`);
+
     // Display all tools used
     if (summary.toolsUsed.length === 1 && summary.toolsUsed[0] === "none") {
         console.log(`Tools Used: 🧠 Direct Response (no tools)`);
@@ -83,7 +90,7 @@ export function getWorkflowExecutionSummary(graphResult) {
 }
 
 /**
- * Main function to execute the shopping workflow
+ * Main function for running the grocery shopping agent workflow
  */
 export async function runShoppingAgentWorkflow(sessionId, chatId, message, useSmartRecall) {
     try {
@@ -100,7 +107,7 @@ export async function runShoppingAgentWorkflow(sessionId, chatId, message, useSm
         const userMessage = new HumanMessage(message);
         messages.push(userMessage);
 
-        // Run the shopping workflow graph
+        // Run the workflow
         const result = await shoppingWorkflowGraph.invoke({
             sessionId,
             messages,
@@ -130,12 +137,12 @@ export async function runShoppingAgentWorkflow(sessionId, chatId, message, useSm
         return queryResult;
         
     } catch (error) {
-        console.error("❌ Error in grocery shopping reply:", error);
+        console.error("❌ Error in shopping agent workflow:", error);
         
         // Return fallback response
         return {
             isCachedResponse: false,
-            content: "I apologize, but I'm having trouble processing your grocery request right now. Please try asking about recipe ingredients, searching for products, or managing your cart."
+            content: "I apologize, but I'm having trouble processing your shopping request right now. Please try asking about recipe ingredients, searching for products, or managing your cart."
         };
     }
 }
@@ -145,5 +152,5 @@ async function visualizeGraph(graph) {
     const image = await drawableGraph.drawMermaidPng();
     const imageBuffer = new Uint8Array(await image.arrayBuffer());
 
-    await fs.writeFile("technical-diagrams/ai-agent-graph.png", imageBuffer);
+    await fs.writeFile("docs/technical-diagrams/ai-agent-graph.png", imageBuffer);
 }

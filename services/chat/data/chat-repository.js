@@ -1,13 +1,8 @@
-import { createClient } from 'redis';
 import { LangCache } from "@redis-ai/langcache";
 import { SearchStrategy } from '@redis-ai/langcache/models/searchstrategy.js';
+import { getRedisClient } from '../../db/redis-client.js';
 
 import CONFIG from '../../../config.js';
-
-const client = await createClient({
-    url: CONFIG.redisUrl,
-}).on('error', (err) => console.log('Redis Client Error', err))
-  .connect();
 
 // Initialize LangCache client
 const langCache = new LangCache({
@@ -31,6 +26,7 @@ export default class ChatRepository {
      * @returns {Promise<ChatMessage[]>}
      */
     async getOrCreateChatHistory(sessionId, chatId) {
+        const client = await getRedisClient();
         const userKey = `users:${sessionId}`;
         const chatHistory = await client.json.get(userKey, {
             path: `$.chat.${chatId}`,
@@ -62,6 +58,7 @@ export default class ChatRepository {
      * @param {ChatMessage} chatMessage
      */
     async saveChatMessage(sessionId, chatId, chatMessage) {
+        const client = await getRedisClient();
         const userKey = `users:${sessionId}`;
         await client.json.set(userKey, '$.updatedAt', new Date().toISOString());
         return client.json.arrAppend(userKey, `$.chat.${chatId}`, chatMessage);
@@ -72,6 +69,7 @@ export default class ChatRepository {
      * @param {string} sessionId
      */
     async deleteChats(sessionId) {
+        const client = await getRedisClient();
         const userKey = `users:${sessionId}`;
         return client.json.del(userKey);
     }

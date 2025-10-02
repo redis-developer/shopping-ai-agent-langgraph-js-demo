@@ -1,20 +1,25 @@
-import OpenAI from 'openai';
+import { BedrockEmbeddings } from '@langchain/aws';
 import CONFIG from '../../../config.js';
 
-const openai = new OpenAI({
-    apiKey: CONFIG.openAiApiKey,
+const embeddings = new BedrockEmbeddings({
+    model: "amazon.titan-embed-text-v2:0",
+    region: CONFIG.awsRegion,
+    credentials: {
+        accessKeyId: CONFIG.awsAccessKeyId,
+        secretAccessKey: CONFIG.awsSecretAccessKey
+    }
 });
 
 /**
- * Generate embeddings for text descriptions
+ * Generate embeddings for text descriptions using AWS Titan Text Embeddings V2
  * @param {Array<string>} texts - Array of text descriptions
  * @returns {Promise<Array<number[]>>} Array of embedding vectors
  */
 export async function generateEmbeddings(texts) {
-    const response = await openai.embeddings.create({
-        model: "text-embedding-3-small", // More cost-effective
-        input: texts,
-    });
+    // Generate embeddings for all texts
+    const embeddingVectors = await Promise.all(
+        texts.map(text => embeddings.embedQuery(text))
+    );
 
-    return response.data.map(item => item.embedding);
+    return embeddingVectors;
 }

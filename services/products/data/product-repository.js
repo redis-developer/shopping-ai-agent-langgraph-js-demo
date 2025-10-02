@@ -1,10 +1,5 @@
 import CONFIG from '../../../config.js';
-import { createClient } from 'redis';
-
-const client = await createClient({
-    url: CONFIG.redisUrl,
-}).on('error', (err) => console.log('Redis Client Error', err))
-  .connect();
+import { getRedisClient } from '../../db/redis-client.js';
 
 export default class ProductRepository {
 
@@ -15,6 +10,7 @@ export default class ProductRepository {
      * @param {number} threshold - Similarity threshold (0-1, default: 0.7)
      */
     async vectorSearchProducts(searchVector, limit = 10, threshold = 0.5) {
+        const client = await getRedisClient();
         // Convert embedding to bytes for Redis
         const vectorBytes = Buffer.from(new Float32Array(searchVector).buffer);
 
@@ -54,6 +50,7 @@ export default class ProductRepository {
      * Traditional keyword-based product search using Redis FT.SEARCH
      */
     async keywordSearchProducts(criteria = {}) {
+        const client = await getRedisClient();
         const { query, category, maxPrice, minRating, limit = 20 } = criteria;
         
         let searchQuery = '*';
@@ -111,6 +108,7 @@ export default class ProductRepository {
      * @returns {Promise<Object|null>} Product object or null if not found
      */
     async getProductById(productId) {
+        const client = await getRedisClient();
         const product = await client.json.get(`products:${productId}`, { path: '$' });
         return product ? product[0] : null;
     }
@@ -121,6 +119,7 @@ export default class ProductRepository {
      * @returns {Promise<Object[]>} Array of product objects
      */
     async getProductsByIds(productIds) {
+        const client = await getRedisClient();
         const products = [];
         const pipeline = client.multi();
         
@@ -150,6 +149,7 @@ export default class ProductRepository {
      * @returns {Promise<Object[]>} Array of product objects
      */
     async getProductsByCategory(category, limit = 20) {
+        const client = await getRedisClient();
         const results = await client.ft.search('idx:products', `@category:{${category}}`, {
             LIMIT: { from: 0, size: limit },
             DIALECT: 2

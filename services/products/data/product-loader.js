@@ -1,19 +1,33 @@
-import { createClient, SCHEMA_FIELD_TYPE, SCHEMA_VECTOR_FIELD_ALGORITHM } from 'redis';
-
+import { SCHEMA_FIELD_TYPE, SCHEMA_VECTOR_FIELD_ALGORITHM } from 'redis';
 import { readFileSync } from 'fs';
 import { parse } from 'csv-parse/sync';
 import CONFIG from '../../../config.js';
-
+import { getRedisClient } from '../../db/redis-client.js';
 import { generateEmbeddings } from '../../ai/helpers/embeddings.js';
 
-const client = await createClient({
-    url: CONFIG.redisUrl,
-}).on('error', (err) => console.log('Redis Client Error', err))
-  .connect();
+/**
+ * Create consolidated search index with both text and vector fields
+ * @param {boolean} dropExisting - Whether to drop existing index first
+ */
+async function createProductIndex(dropExisting = false) {
+    const client = await getRedisClient();
 
-// Create consolidated search index with both text and vector fields
-try {
-    await client.ft.create('idx:products', {
+    try {
+        // Drop existing index if requested
+        if (dropExisting) {
+            try {
+                await client.ft.dropIndex('idx:products');
+                console.log('✅ Dropped existing product index');
+            } catch (error) {
+                if (error.message.includes('Unknown index name')) {
+                    console.log('ℹ️  No existing index to drop');
+                } else {
+                    console.log('⚠️  Error dropping index:', error.message);
+                }
+            }
+        }
+
+        await client.ft.create('idx:products', {
         '$.name': {
             type: SCHEMA_FIELD_TYPE.TEXT,
             SORTABLE: true,
@@ -49,18 +63,19 @@ try {
             AS: 'embedding',
             ALGORITHM: SCHEMA_VECTOR_FIELD_ALGORITHM.HNSW,
             DISTANCE_METRIC: 'L2',
-            DIM: 1536,
+            DIM: 1024, // AWS Titan Text Embeddings V2 dimension
         }
     }, {
         ON: 'JSON',
         PREFIX: 'products:'
-    });
-    console.log('✅ Search index created successfully');
-} catch (e) {
-    if (e.message === 'Index already exists') {
-        console.log('📋 Search index exists already, skipped creation.');
-    } else {
-        console.error('❌ Error creating search index:', e);
+        });
+        console.log('✅ Search index created successfully');
+    } catch (e) {
+        if (e.message === 'Index already exists') {
+            console.log('📋 Search index exists already, skipped creation.');
+        } else {
+            console.error('❌ Error creating search index:', e);
+        }
     }
 }
 
@@ -69,9 +84,29 @@ try {
  * @param {string} csvFilePath - Path to the CSV file
  * @param {number} batchSize - Number of products to process at once (default: 50)
  * @param {number} maxProducts - Maximum number of products to load (default: 1000)
+ * @param {boolean} dropExisting - Whether to drop existing index and data first (default: false)
  */
-export async function loadProductsFromCSV(csvFilePath, batchSize = 50, maxProducts = 1000) {
+export async function loadProductsFromCSV(csvFilePath, batchSize = 50, maxProducts = 1000, dropExisting = false) {
     try {
+        // Initialize Redis client and create index
+        console.log('🔄 Initializing Redis client...');
+        const client = await getRedisClient();
+
+        if (dropExisting) {
+            console.log('🗑️  Dropping existing product data...');
+            // Delete all existing product keys
+            const existingKeys = await client.keys('products:*');
+            if (existingKeys.length > 0) {
+                await client.del(existingKeys);
+                console.log(`✅ Deleted ${existingKeys.length} existing product records`);
+            } else {
+                console.log('ℹ️  No existing product data to delete');
+            }
+        }
+
+        console.log('🔄 Creating product search index...');
+        await createProductIndex(dropExisting);
+
         console.log('📋 Reading CSV file:', csvFilePath);
         
         // Read and parse CSV file
@@ -146,7 +181,7 @@ export async function loadProductsFromCSV(csvFilePath, batchSize = 50, maxProduc
         
         for (let i = 0; i < products.length; i += batchSize) {
             const batch = products.slice(i, i + batchSize);
-            console.log(`📤 Processing batch ${Math.floor(i/batchSize) + 1}/${Math.ceil(products.length/batchSize)} (${batch.length} items)`);
+            console.log(`Processing batch ${Math.floor(i/batchSize) + 1}/${Math.ceil(products.length/batchSize)} (${batch.length} items)`);
             
             // Generate embeddings for the batch
             const textsForEmbedding = batch.map(product => 
@@ -223,6 +258,7 @@ export async function loadProductsFromCSV(csvFilePath, batchSize = 50, maxProduc
  */
 export async function checkRedisMemory() {
     try {
+        const client = await getRedisClient();
         const info = await client.info('memory');
         const lines = info.split('\r\n');
         const memoryInfo = {};

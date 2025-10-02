@@ -1,6 +1,6 @@
 import { tool } from "@langchain/core/tools";
 import { HumanMessage } from "@langchain/core/messages";
-import { ChatOpenAI } from "@langchain/openai";
+import { ChatBedrockConverse } from "@langchain/aws";
 
 import { z } from "zod";
 
@@ -19,12 +19,19 @@ import CONFIG from '../../../config.js';
  */
 async function getIngredientsFromLLM(recipe) {
 
-    const model = new ChatOpenAI({
+    const model = new ChatBedrockConverse({
+        model: CONFIG.bedrockModelId,
+        region: CONFIG.awsRegion,
+        credentials: {
+            accessKeyId: CONFIG.awsAccessKeyId,
+            secretAccessKey: CONFIG.awsSecretAccessKey
+        },
         temperature: 0.1, // Lower temperature for more consistent parsing
-        model: "gpt-4o-mini", // Faster, cheaper model for simple tasks
-        apiKey: CONFIG.openAiApiKey,
         maxTokens: 500, // Limit response size for faster processing
-        timeout: 10000 // 10 second timeout built into the model
+        guardrails: {
+            guardrailIdentifier: CONFIG.bedrockConversationGuardrailId,
+            guardrailVersion: CONFIG.bedrockGuardrailVersion
+        }
     });
 
     const systemPrompt = `Extract essential ingredients for this recipe. Return ONLY valid JSON:
@@ -140,10 +147,18 @@ export const directAnswerTool = tool(
 
         try {
             // Direct LLM call for general questions
-            const model = new ChatOpenAI({
+            const model = new ChatBedrockConverse({
+                model: CONFIG.bedrockModelId,
+                region: CONFIG.awsRegion,
+                credentials: {
+                    accessKeyId: CONFIG.awsAccessKeyId,
+                    secretAccessKey: CONFIG.awsSecretAccessKey
+                },
                 temperature: 0.2,
-                model: CONFIG.modelName,
-                apiKey: CONFIG.openAiApiKey
+                guardrails: {
+                    guardrailIdentifier: CONFIG.bedrockConversationGuardrailId,
+                    guardrailVersion: CONFIG.bedrockGuardrailVersion
+                }
             });
 
             const systemPrompt = `You are a knowledgeable grocery shopping and cooking assistant. Answer questions about:

@@ -1,10 +1,5 @@
-import { createClient } from 'redis';
 import CONFIG from '../../../config.js';
-
-const client = await createClient({
-    url: CONFIG.redisUrl,
-}).on('error', (err) => console.log('Redis Client Error', err))
-  .connect();
+import { getRedisClient } from '../../db/redis-client.js';
 
 export default class CartRepository {
 
@@ -14,6 +9,7 @@ export default class CartRepository {
      * @param {string} productId - Product ID to check
      */
     async checkItemExistsInCart(sessionId, productId) {
+        const client = await getRedisClient();
         const userKey = `users:${sessionId}`;
         const existingItem = await client.json.get(userKey, {
             path: `$.cart.items[?(@.productId=='${productId}')]`
@@ -32,6 +28,7 @@ export default class CartRepository {
      * @param {number} newQuantity - New quantity
      */
     async updateItemQuantity(sessionId, productId, newQuantity) {
+        const client = await getRedisClient();
         const userKey = `users:${sessionId}`;
         await client.json.set(userKey, `$.cart.items[?(@.productId=='${productId}')].quantity`, newQuantity);
         await client.json.set(userKey, '$.cart.updatedAt', new Date().toISOString());
@@ -46,6 +43,7 @@ export default class CartRepository {
      * @param {Object} cartItem - Cart item object
      */
     async addNewItemToCart(sessionId, cartItem) {
+        const client = await getRedisClient();
         const userKey = `users:${sessionId}`;
 
         // Check if cart exists in user data, initialize if needed
@@ -74,6 +72,7 @@ export default class CartRepository {
      * @param {string} sessionId - User session ID
      */
     async getCartData(sessionId) {
+        const client = await getRedisClient();
         const userKey = `users:${sessionId}`;
         const cartData = await client.json.get(userKey, { path: '$.cart' });
 
@@ -90,8 +89,9 @@ export default class CartRepository {
      * @param {string} productId - Product ID to remove
      */
     async removeFromCart(sessionId, productId) {
+        const client = await getRedisClient();
         const userKey = `users:${sessionId}`;
-        
+
         // Get current cart
         const cartData = await client.json.get(userKey, { path: '$.cart' });
         if (!cartData || cartData.length === 0 || !cartData[0] || !cartData[0].items) {
@@ -132,8 +132,9 @@ export default class CartRepository {
      * @param {string} sessionId - User session ID
      */
     async clearCart(sessionId) {
+        const client = await getRedisClient();
         const userKey = `users:${sessionId}`;
-        
+
         const cartData = await client.json.get(userKey, { path: '$.cart' });
 
         if (!cartData || cartData.length === 0 || !cartData[0] || !cartData[0].items || cartData[0].items.length === 0) {

@@ -16,6 +16,9 @@ import { z } from "zod";
  * @property {number} [cartTotal] - Current total value of items in the shopping cart
  * @property {string} [lastSearchQuery] - Last search query performed for context
  * @property {string} [recipeContext] - Current recipe being worked on (if any)
+ * @property {"passed" | "blocked"} [guardrailTestResult] - Result of guardrail test
+ * @property {string} [guardrailTestResponse] - Response from guardrail test (if passed)
+ * @property {string} [guardrailBlockReason] - Reason for guardrail block (if blocked)
  */
 export const ShoppingAgentState = MessagesZodState.extend({
     sessionId: z.string(),
@@ -30,5 +33,8 @@ export const ShoppingAgentState = MessagesZodState.extend({
     })).optional(),
     cartTotal: z.number().optional(),
     lastSearchQuery: z.string().optional(),
-    recipeContext: z.string().optional()
+    recipeContext: z.string().optional(),
+    guardrailTestResult: z.enum(["passed", "blocked"]).optional(),
+    guardrailTestResponse: z.string().optional(),
+    guardrailBlockReason: z.string().optional()
 });
