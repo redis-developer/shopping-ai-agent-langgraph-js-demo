@@ -1,5 +1,5 @@
-import { z } from "zod";
 import { MessagesZodState } from "@langchain/langgraph";
+import { z } from "zod";
 
 /**
  * Grocery Shopping Agent State Schema
@@ -7,7 +7,7 @@ import { MessagesZodState } from "@langchain/langgraph";
  * Extends the base `MessagesZodState` with grocery shopping specific metadata
  * for tracking session context, caching, tool invocation, and shopping cart details.
  *
- * @typedef {Object} GroceryAgentState
+ * @typedef {Object} ShoppingAgentState
  * @property {string} sessionId - Unique session ID for tracking the user's shopping session
  * @property {string} [result] - Optional result string, typically the agent's final response
  * @property {"hit" | "miss"} [cacheStatus] - Cache indicator showing if a cached result was used
@@ -17,7 +17,7 @@ import { MessagesZodState } from "@langchain/langgraph";
  * @property {string} [lastSearchQuery] - Last search query performed for context
  * @property {string} [recipeContext] - Current recipe being worked on (if any)
  */
-export const GroceryAgentState = MessagesZodState.extend({
+export const ShoppingAgentState = MessagesZodState.extend({
     sessionId: z.string(),
     result: z.string().optional(),
     cacheStatus: z.enum(["hit", "miss"]).optional(),

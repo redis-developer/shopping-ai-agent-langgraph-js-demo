@@ -22,7 +22,7 @@ Redish is an AI-powered grocery shopping platform that combines Redis's speed wi
 ## Tech Stack
 
 - **Node.js** + **Express** (Backend API)
-- **Redis** (Product store, conversational history, and semantic caching with LangCache)
+- **Redis** (Product store, conversational history, and semantic caching with Redis LangCache)
 - **LangGraph** (AI workflow orchestration)
 - **OpenAI API** (GPT-4 for intelligent responses)
 - **HTML + CSS + Vanilla JS** (Frontend)
@@ -183,7 +183,7 @@ services/
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 1. Fork the repository
 2. Create your feature branch (`git checkout -b feature/amazing-feature`)
@@ -193,7 +193,7 @@ services/
 
 ---
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 

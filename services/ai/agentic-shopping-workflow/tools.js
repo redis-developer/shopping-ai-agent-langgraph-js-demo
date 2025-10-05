@@ -1,7 +1,8 @@
 import { tool } from "@langchain/core/tools";
-import { z } from "zod";
-import { ChatOpenAI } from "@langchain/openai";
 import { HumanMessage } from "@langchain/core/messages";
+import { ChatOpenAI } from "@langchain/openai";
+
+import { z } from "zod";
 
 // Import service functions
 import { findProductsForIngredients, searchProducts } from '../../products/domain/product-service.js';
@@ -17,7 +18,7 @@ import CONFIG from '../../../config.js';
  * @returns {Promise<Object>} Parsed ingredients data
  */
 async function getIngredientsFromLLM(recipe) {
-    // Use faster model for simple ingredient extraction
+
     const model = new ChatOpenAI({
         temperature: 0.1, // Lower temperature for more consistent parsing
         model: "gpt-4o-mini", // Faster, cheaper model for simple tasks
@@ -42,7 +43,6 @@ Rules:
 - Skip salt, water, oil unless special
 - Be concise and fast`;
 
-    // Simple LLM call - let the model handle timeouts naturally
     const response = await model.invoke([
         { role: "system", content: systemPrompt },
         new HumanMessage(`Ingredients for ${recipe}`)
@@ -296,7 +296,7 @@ export const addToCartTool = tool(
         schema: z.object({
             sessionId: z.string().describe("User session ID"),
             productIds: z.array(z.string()).describe("Array of product IDs to add"),
-            quantities: z.array(z.number()).optional().describe("Array of quantities for each product (default: 1 each)")
+            quantities: z.array(z.number()).describe("Array of quantities for each product (default: 1 each)")
         })
     }
 );
@@ -386,5 +386,5 @@ export const groceryTools = [
     addToCartTool,
     viewCartTool,
     clearCartTool,
-    directAnswerTool
+    directAnswerTool,
 ];

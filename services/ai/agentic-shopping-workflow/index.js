@@ -1,33 +1,36 @@
 import * as fs from "node:fs/promises";
+
 import { StateGraph, START, END } from "@langchain/langgraph";
-import { GroceryAgentState } from "./state.js";
-import { groceryCacheCheck, groceryShoppingAgent, saveGroceryToCache } from "./nodes.js";
 import { HumanMessage, AIMessage } from "@langchain/core/messages";
+
+import { ShoppingAgentState } from "./state.js";
+import { queryCacheCheck, personalShopperAgent, processWorkOutputWithCaching } from "./nodes.js";
+
 import ChatRepository from "../../chat/data/chat-repository.js";
 
 const chatRepository = new ChatRepository();
 
 /**
- * Create Grocery Shopping LangGraph Agent
- * 
- * This creates a specialized agent graph for grocery shopping with:
+ * Create Agentic AI Shopping Workflow
+ *
+ * This creates a multi-agent workflow system for intelligent shopping assistance with:
  * 1. Smart caching for recipe ingredient lists (long TTL) vs cart/search operations (no cache)
- * 2. Specialized grocery shopping tools with embeddings support
+ * 2. Specialized shopping tools with embeddings support
  * 3. Product ID-based cart management
  * 4. LLM-powered recipe ingredient knowledge + real product database
  */
-export const createGroceryShoppingAgent = () => {
-    const graph = new StateGraph(GroceryAgentState)
-        .addNode("grocery_cache_check", groceryCacheCheck)
-        .addNode("grocery_shopping_agent", groceryShoppingAgent)
-        .addNode("save_grocery_cache", saveGroceryToCache)
+export const createAgenticAIShoppingWorkflow = () => {
+    const graph = new StateGraph(ShoppingAgentState)
+        .addNode("query_cache_check", queryCacheCheck)
+        .addNode("personal_shopper_agent", personalShopperAgent)
+        .addNode("process_work_output_with_caching", processWorkOutputWithCaching)
 
-        .addEdge(START, "grocery_cache_check")
-        .addConditionalEdges("grocery_cache_check", (state) => {
-            return state.cacheStatus === "hit" ? END : "grocery_shopping_agent";
+        .addEdge(START, "query_cache_check")
+        .addConditionalEdges("query_cache_check", (state) => {
+            return state.cacheStatus === "hit" ? END : "personal_shopper_agent";
         })
-        .addEdge("grocery_shopping_agent", "save_grocery_cache")
-        .addEdge("save_grocery_cache", END)
+        .addEdge("personal_shopper_agent", "process_work_output_with_caching")
+        .addEdge("process_work_output_with_caching", END)
 
         .compile();
 
@@ -36,9 +39,9 @@ export const createGroceryShoppingAgent = () => {
     return graph;
 };
 
-export const groceryGraph = createGroceryShoppingAgent();
+export const shoppingWorkflowGraph = createAgenticAIShoppingWorkflow();
 
-export function getGroceryExecutionSummary(graphResult) {
+export function getWorkflowExecutionSummary(graphResult) {
     const summary = {
         toolsUsed: graphResult.toolsUsed || ["none"],
         cacheStatus: graphResult.cacheStatus || "miss",
@@ -80,9 +83,9 @@ export function getGroceryExecutionSummary(graphResult) {
 }
 
 /**
- * Main function to get grocery shopping reply
+ * Main function to execute the shopping workflow
  */
-export async function getGroceryShoppingReply(sessionId, chatId, message, useSmartRecall) {
+export async function runShoppingAgentWorkflow(sessionId, chatId, message, useSmartRecall) {
     try {
         const rawHistory = await chatRepository.getOrCreateChatHistory(sessionId, chatId);
 
@@ -97,14 +100,14 @@ export async function getGroceryShoppingReply(sessionId, chatId, message, useSma
         const userMessage = new HumanMessage(message);
         messages.push(userMessage);
 
-        // Run the grocery shopping graph
-        const result = await groceryGraph.invoke({
+        // Run the shopping workflow graph
+        const result = await shoppingWorkflowGraph.invoke({
             sessionId,
             messages,
         });
 
         // Get execution summary for logging
-        const executionSummary = getGroceryExecutionSummary(result);
+        const executionSummary = getWorkflowExecutionSummary(result);
 
         const finalReply = result.result || result.output;
 

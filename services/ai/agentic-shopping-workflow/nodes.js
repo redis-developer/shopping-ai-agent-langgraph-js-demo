@@ -5,9 +5,9 @@ import { checkSemanticCache, saveToSemanticCache } from "../../chat/domain/chat-
 import CONFIG from "../../../config.js";
 
 /**
- * Node 1: Cache Check for Grocery Shopping
+ * Node 1: Query Cache Check
  */
-export const groceryCacheCheck = async (state) => {
+export const queryCacheCheck = async (state) => {
     const lastUserMessage = state.messages.findLast(m => m.getType() === "human");
     const userQuery = lastUserMessage?.content || "";
     
@@ -42,18 +42,17 @@ export const groceryCacheCheck = async (state) => {
 };
 
 /**
- * Node 2: Grocery Shopping Agent Node
- * 
- * Specialized agent with improved tool selection for faster responses
+ * Node 2: Personal Shopper Agent
+ *
+ * Specialized agent with tools for shopping-related tasks
  */
-export const groceryShoppingAgent = async (state) => {
+export const personalShopperAgent = async (state) => {
     const model = new ChatOpenAI({ 
         temperature: 0.1,
         model: CONFIG.modelName, 
         apiKey: CONFIG.openAiApiKey 
     });
 
-    // Enhanced system prompt with clear tool usage guidelines
     const systemPrompt = `You are a helpful grocery shopping assistant. You have access to specialized tools that return JSON data.
 
 🍳 **fast_recipe_ingredients**: For recipe/ingredient questions (USE THIS FIRST for recipes!)
@@ -79,8 +78,6 @@ export const groceryShoppingAgent = async (state) => {
 - Cooking tips, techniques, nutrition advice
 - Food storage, preparation methods
 - General culinary knowledge (not recipe ingredients!)
-
-
 
 **CRITICAL Tool Selection Rules:**
 1. Recipe/ingredient questions → ALWAYS use fast_recipe_ingredients FIRST
@@ -186,9 +183,9 @@ Make responses helpful, fast, and easy to interact with!`;
 };
 
 /**
- * Node 3: Save Grocery Results to Cache with LLM-based GDPR sanitization
+ * Node 3: Process Results for caching
  */
-export const saveGroceryToCache = async (state) => {
+export const processWorkOutputWithCaching = async (state) => {
     if (!state.result) {
         return {};
     }
@@ -196,7 +193,7 @@ export const saveGroceryToCache = async (state) => {
     const lastUserMessage = state.messages.findLast(m => m.getType() === "human");
     const query = lastUserMessage?.content || "";
 
-    // Determine TTL using smart logic
+    // Determine TTL for cache
     const cacheTTL = determineCacheTTL(query);
 
     // Don't cache if TTL is 0 (e.g., cart operations)
@@ -208,8 +205,8 @@ export const saveGroceryToCache = async (state) => {
     try {
         // Use LLM-based GDPR sanitization
         const [sanitizedQuery, sanitizedResponse ] =  await Promise.all([
-            sanitizeForGDPR(query),
-            sanitizeForGDPR(state.result)
+            dataComplianceAgent(query),
+            dataComplianceAgent(state.result)
         ]);
 
         console.log(`💾 Saving sanitized query to cache: "${sanitizedQuery.substring(0, 50)}..."`);
@@ -221,7 +218,7 @@ export const saveGroceryToCache = async (state) => {
             state.sessionId
         );
 
-        console.log(`💾 Cached with TTL: ${cacheTTL}ms (${Math.round(cacheTTL / (60 * 60 * 1000))}h) - GDPR compliant`);
+        console.log(`💾 Cached with TTL: ${cacheTTL}ms (${Math.round(cacheTTL / (60 * 60 * 1000))}h)`);
 
     } catch (error) {
         console.error('Error in GDPR-compliant caching:', error);
@@ -233,6 +230,7 @@ export const saveGroceryToCache = async (state) => {
 
 /**
  * Determine cache TTL based on query type
+ * TODO: To be replaced by a better caching logic (e.g: semantic routing)
  */
 function determineCacheTTL(query) {
     if (!query || typeof query !== 'string') {
@@ -271,7 +269,7 @@ function determineCacheTTL(query) {
  * LLM-based GDPR-compliant data sanitization
  * Uses AI to intelligently remove personal information while preserving the core query
  */
-async function sanitizeForGDPR(text) {
+async function dataComplianceAgent(text) {
     if (!text || typeof text !== 'string') return text;
 
     try {

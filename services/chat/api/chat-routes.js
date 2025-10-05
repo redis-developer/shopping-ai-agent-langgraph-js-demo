@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { endUserSession, getReplyFromGroceryAgent } from '../domain/chat-service.js';
+import { endUserSession, processShoppingInquiry } from '../domain/chat-service.js';
 
 const router = Router();
 
@@ -12,7 +12,7 @@ router.post('/', async function(req, res, next) {
     }
 
     try {
-        const reply = await getReplyFromGroceryAgent(sessionId, chatId, message, useSmartRecall);
+        const reply = await processShoppingInquiry(sessionId, chatId, message, useSmartRecall);
         res.json({ 
             content: reply.content,
             isCachedResponse: reply.isCachedResponse

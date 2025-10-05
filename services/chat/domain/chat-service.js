@@ -1,5 +1,5 @@
 import ChatRepository from '../data/chat-repository.js';
-import { getGroceryShoppingReply } from '../../ai/grocery-ai-agent/index.js';
+import { runShoppingAgentWorkflow } from '../../ai/agentic-shopping-workflow/index.js';
 
 const chatRepository = new ChatRepository();
 
@@ -45,12 +45,12 @@ export async function endUserSession(sessionId) {
 }
 
 /**
- * Get reply from grocery AI agent
+ * Get reply from Shopping AI agent
  * @param {string} sessionId - User session ID
  * @param {string} chatId - Chat ID
  * @param {string} message - User message
  * @param {boolean} useSmartRecall - Whether to use smart recall caching
  */
-export async function getReplyFromGroceryAgent(sessionId, chatId, message, useSmartRecall) {
-    return getGroceryShoppingReply(sessionId, chatId, message, useSmartRecall);
+export async function processShoppingInquiry(sessionId, chatId, message, useSmartRecall) {
+    return runShoppingAgentWorkflow(sessionId, chatId, message, useSmartRecall);
 }
