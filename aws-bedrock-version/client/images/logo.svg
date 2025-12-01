@@ -1,0 +1,142 @@
+
+  <svg width="220" height="80" viewBox="0 0 220 80" xmlns="http://www.w3.org/2000/svg">
+    <!-- Gradient Definitions -->
+    <defs>
+      <linearGradient id="basketGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style="stop-color:#8B4513;stop-opacity:1" />
+        <stop offset="100%" style="stop-color:#A0522D;stop-opacity:1" />
+      </linearGradient>
+      <linearGradient id="leafGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style="stop-color:#32CD32;stop-opacity:1" />
+        <stop offset="100%" style="stop-color:#228B22;stop-opacity:1" />
+      </linearGradient>
+      <radialGradient id="tomatoGradient" cx="50%" cy="30%" r="70%">
+        <stop offset="0%" style="stop-color:#FF6347;stop-opacity:1" />
+        <stop offset="100%" style="stop-color:#DC143C;stop-opacity:1" />
+      </radialGradient>
+      <radialGradient id="appleGradient" cx="40%" cy="30%" r="60%">
+        <stop offset="0%" style="stop-color:#FFD700;stop-opacity:1" />
+        <stop offset="100%" style="stop-color:#FF8C00;stop-opacity:1" />
+      </radialGradient>
+      <filter id="softShadow" x="-50%" y="-50%" width="200%" height="200%">
+        <feDropShadow dx="2" dy="2" stdDeviation="2" flood-color="#000000" flood-opacity="0.2"/>
+      </filter>
+    </defs>
+
+    <!-- Shopping Basket -->
+    <g transform="translate(10, 20)" filter="url(#softShadow)">
+      <!-- Basket body -->
+      <ellipse cx="25" cy="35" rx="22" ry="8" fill="url(#basketGradient)"/>
+      <rect x="3" y="20" width="44" height="15" rx="2" fill="url(#basketGradient)" opacity="0.8"/>
+
+      <!-- Basket weave pattern -->
+      <g stroke="#654321" stroke-width="1" opacity="0.6">
+        <line x1="8" y1="20" x2="8" y2="35"/>
+        <line x1="15" y1="20" x2="15" y2="35"/>
+        <line x1="22" y1="20" x2="22" y2="35"/>
+        <line x1="29" y1="20" x2="29" y2="35"/>
+        <line x1="36" y1="20" x2="36" y2="35"/>
+        <line x1="42" y1="20" x2="42" y2="35"/>
+      </g>
+
+      <!-- Basket handle -->
+      <path d="M15,20 Q25,5 35,20" stroke="url(#basketGradient)" stroke-width="3" fill="none"/>
+    </g>
+
+    <!-- Fresh Produce in Basket -->
+    <g transform="translate(15, 15)">
+      <!-- Red Tomato -->
+      <circle cx="20" cy="18" r="6" fill="url(#tomatoGradient)"/>
+      <path d="M18,12 Q20,10 22,12 Q20,14 18,12" fill="#32CD32"/>
+
+      <!-- Orange/Apple -->
+      <circle cx="30" cy="16" r="5.5" fill="url(#appleGradient)"/>
+      <ellipse cx="32" cy="14" rx="1" ry="2" fill="#FF8C00" opacity="0.7"/>
+
+      <!-- Green Lettuce/Leafy -->
+      <g transform="translate(12, 20)">
+        <path d="M0,0 Q-3,3 -2,8 Q0,5 3,8 Q2,3 0,0" fill="url(#leafGradient)" opacity="0.9"/>
+        <path d="M2,2 Q5,5 4,10 Q6,7 9,10 Q7,5 2,2" fill="url(#leafGradient)" opacity="0.7"/>
+      </g>
+
+      <!-- Carrot -->
+      <ellipse cx="35" cy="22" rx="2" ry="8" fill="#FF8C00" transform="rotate(25 35 22)"/>
+      <g transform="translate(33, 18)">
+        <path d="M0,0 L-1,3 L1,3 Z" fill="#32CD32"/>
+        <path d="M1,0 L0,3 L2,3 Z" fill="#32CD32"/>
+      </g>
+    </g>
+
+    <!-- Organic flowing text background -->
+    <g opacity="0.1">
+      <path d="M70,20 Q90,10 110,20 Q130,30 150,20 Q170,10 190,20 Q200,25 210,30"
+            stroke="#32CD32" stroke-width="8" fill="none"/>
+      <path d="M70,50 Q90,60 110,50 Q130,40 150,50 Q170,60 190,50 Q200,45 210,40"
+            stroke="#32CD32" stroke-width="6" fill="none"/>
+    </g>
+
+    <!-- Main Text with Redis Mark as R -->
+    <g transform="translate(75, 50)">
+      <!-- Redis Mark as the "R" -->
+      <g transform="translate(0, -25) scale(0.2)">
+        <path fill="#FF4438" d="M147.670166,79.4482727c-10.7946014,13.6012039-22.452774,29.1454315-45.7691193,29.1454315
+          c-20.8268356,0-28.5858765-18.3700104-29.1313019-33.2931824c4.5630417,9.6490479,13.4846115,17.4628525,27.4041672,17.1012802
+          c26.7706146-0.8635712,45.1214371-25.0434799,45.1214371-47.0644722C145.2953491,18.9985008,125.6491776,0,91.5382309,0
+          C67.1424255,0,36.9175415,9.2833586,17.0554714,23.9640179c-0.2158909,15.1124439,8.2038994,34.7586212,11.226387,32.5997009
+          c17.21908-12.3804817,30.8731976-20.3501434,44.1166153-24.3462563C52.7944603,54.0785866,5.7588782,104.8391037,0,113.775116
+          C0.6476762,121.9790115,10.7946024,144,15.7601204,144c1.5112438,0,2.8065968-0.8635712,4.3178406-2.3748169
+          c14.1801453-15.9326324,25.7396469-30.2172928,36.0215034-43.985733
+          c1.443779,20.1794739,11.366806,44.8493042,39.1089325,44.8493042c24.8275833,0,49.4392776-17.9190369,60.6656723-58.2908554
+          C157.1694183,79.2323837,151.1244354,75.3463287,147.670166,79.4482727z M119.3883057,46.8485756
+          c0,12.7376328-12.5217361,18.9985008-23.9640198,18.9985008c-6.1162338,0-10.8146286-1.6060638-14.5303345-3.6929359
+          c6.8368607-10.3524857,13.6045761-20.9680939,20.8757477-32.3321533
+          C114.5906143,31.9920292,119.3883057,39.1185226,119.3883057,46.8485756z"/>
+      </g>
+
+      <!-- Rest of "edish" text -->
+      <text x="30" y="0" font-family="'Georgia', serif" font-size="32" font-weight="bold" fill="#32CD32">edish</text>
+    </g>
+
+    <!-- Tagline -->
+    <text x="77" y="65" font-family="'Georgia', serif" font-size="9" fill="#666666" font-style="italic">
+      Fresh • Smart • Delivered
+    </text>
+
+    <!-- Decorative leaves around text -->
+    <g opacity="0.7">
+      <!-- Left leaf -->
+      <g transform="translate(65, 35) rotate(-15)">
+        <path d="M0,0 Q-2,2 -1,6 Q1,3 3,6 Q2,2 0,0" fill="url(#leafGradient)" opacity="0.6"/>
+      </g>
+
+      <!-- Right leaf -->
+      <g transform="translate(180, 40) rotate(15)">
+        <path d="M0,0 Q-2,2 -1,6 Q1,3 3,6 Q2,2 0,0" fill="url(#leafGradient)" opacity="0.6"/>
+      </g>
+
+      <!-- Small berries -->
+      <circle cx="200" cy="30" r="1.5" fill="#DC143C"/>
+      <circle cx="203" cy="32" r="1.2" fill="#DC143C" opacity="0.8"/>
+      <circle cx="198" cy="33" r="1" fill="#DC143C" opacity="0.6"/>
+    </g>
+
+    <!-- Organic dots pattern -->
+    <g opacity="0.4">
+      <circle cx="70" cy="25" r="1" fill="#32CD32"/>
+      <circle cx="185" cy="55" r="1.2" fill="#FF8C00"/>
+      <circle cx="205" cy="20" r="0.8" fill="#FF4438"/>
+      <circle cx="90" cy="65" r="1" fill="#32CD32"/>
+    </g>
+
+    <!-- Fresh produce icons floating -->
+    <g opacity="0.3" transform="translate(160, 15)">
+      <!-- Small apple -->
+      <circle cx="0" cy="0" r="3" fill="#FF4438"/>
+      <path d="M-1,-3 Q0,-4 1,-3" stroke="#32CD32" stroke-width="1" fill="none"/>
+
+      <!-- Small leaf -->
+      <g transform="translate(15, 5)">
+        <path d="M0,0 Q-1,1 0,3 Q1,1 0,0" fill="#32CD32"/>
+      </g>
+    </g>
+  </svg>

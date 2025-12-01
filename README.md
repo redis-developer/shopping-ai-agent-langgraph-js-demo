@@ -1,4 +1,4 @@
-# 🛒 Redish
+# 🛒 Shopping AI Agent with LangGraph.js
 
 **Redis-powered grocery e-commerce with intelligent shopping assistance.**
 
@@ -17,107 +17,6 @@ Redish is an AI-powered grocery shopping platform that combines Redis's speed wi
 - **Recipe Intelligence**: Get ingredient lists with suggested products for any recipe
 - **Cart Management**: Add, view, and manage shopping cart items
 
----
-
-## Tech Stack
-
-- **Node.js** + **Express** (Backend API)
-- **Redis** (Product store, conversational history, and semantic caching with Redis LangCache)
-- **LangGraph** (AI workflow orchestration)
-- **OpenAI API** (GPT-4 for intelligent responses)
-- **HTML + CSS + Vanilla JS** (Frontend)
-
----
-
-## Getting Started
-
-### Prerequisites
-
-- **OpenAI API Key**: [Create an API key](https://platform.openai.com/account/api-keys)
-- **Redis LangCache API**: [Get LangCache credentials](https://redis.io/langcache/)
-
-### Clone this repository
-
-```bash
-git clone https://github.com/redis-developer/Redish.git
-cd Redish
-```
-
-### Configure environment variables
-
-Create a `.env` file at the root:
-
-```bash
-APP_NAME="Redish"
-SERVER_PORT=3000
-
-OPENAI_API_KEY=your_openai_api_key
-
-REDIS_URL=your_redis_connection_string
-
-LANGCACHE_API_KEY="your_langcache_api_key"
-LANGCACHE_API_BASE_URL="your_langcache_api_base_url"
-LANGCACHE_CACHE_ID="your_langcache_cache_id"
-
-MODEL_NAME="gpt-4o-mini"
-
-# For tracing with Langsmith
-LANGSMITH_TRACING="true"
-LANGSMITH_ENDPOINT="your_langsmith_endpoint"
-LANGSMITH_API_KEY="your_langsmith_api_key"
-LANGSMITH_PROJECT="your_langsmith_project"
-
-```
-
-📝 Make sure to replace these placeholders with your real values before running the app.
-
-### Option 1: Manual installation
-
-#### ✅ Prerequisites
-
-- **Node.js (v18 or higher)**: [Download & Install Node.js](https://nodejs.org/)
-- **Redis**: You can either:
-  - Install Redis locally: [Redis installation guide](https://redis.io/docs/getting-started/installation/)
-  - Use Docker: `docker run --name redish-redis -p 6379:6379 redis:8.0`
-  - Use [Redis Cloud](https://redis.io) (no installation required)
-
-#### ✅ Setup
-
-1. Install dependencies:
-   ```bash
-   npm install
-   ```
-
-2. Load sample grocery data:
-   ```bash
-   npm run load-products
-   ```
-
-3. Start the server:
-   ```bash
-   npm start
-   ```
-
-### Option 2: 🐳 Run with Docker Compose
-
-Skip manual setup and run everything using Docker:
-
-```bash
-docker compose up
-```
-
-To stop the containers:
-
-```bash
-docker compose down -v
-```
-
-### Access the app
-
-Visit http://localhost:3000 in your browser (or use the port specified in `.env`).
-
----
-
 ## AI Features
 
 - **Recipe Ingredients**: Ask for ingredients for any recipe and get suggested products
@@ -130,8 +29,80 @@ Visit http://localhost:3000 in your browser (or use the port specified in `.env`
 - **Semantic Cache**: Similar queries return instantly using Redis LangCache
 - **Vector Search**: Find products using AI-powered similarity search
 - **Redis as memory layer**: for fast data retrieval
-- **LangGraph Workflows**:  AI agent routing, tool selection
+- **LangGraph Workflows**: AI agent routing, tool selection
 - **Multi-tool Agent**: Recipe tools, search tools, cart tools, and knowledge tools
+
+---
+
+## Setup
+
+- **OpenAI Version Setup**: See [openai-version/README.md](openai-version/README.md)
+- **AWS Bedrock Version Setup**: See [aws-bedrock-version/README.md](aws-bedrock-version/README.md)
+- **AWS Bedrock Guardrails**: See [aws-bedrock-version/docs/guardrails.md](aws-bedrock-version/docs/guardrails.md)
+
+---
+
+## 📁 Repository Structure
+
+This repository contains two versions of the demo:
+
+```
+│ 
+├── openai-version/       # OpenAI-powered version
+│   ├── package.json
+│   ├── index.js
+│   ├── services/
+│   └── ...
+│   └── README.md         # Setup instructions
+│
+├── aws-bedrock-version/  # AWS Bedrock version
+│   ├── package.json
+│   ├── index.js
+│   ├── services/
+│   └── ...
+│   └── README.md         # Setup instructions
+└── README.md             # This file
+```
+
+## Quick Start
+
+Choose your preferred AI provider:
+
+### Option 1: OpenAI Version
+
+```bash
+cd openai-version
+# Follow setup instructions in openai-version/README.md
+```
+
+### Option 2: AWS Bedrock Version
+
+```bash
+cd aws-bedrock-version
+# Follow setup instructions in aws-bedrock-version/README.md
+```
+
+## 📋 Version Comparison
+
+| Feature | OpenAI Version | AWS Bedrock Version |
+|---------|----------------------|-------------------|
+| **AI Provider** | OpenAI GPT-4 | AWS Bedrock Claude 3.5 Sonnet |
+| **Embeddings** | OpenAI Embeddings | AWS Bedrock Titan Text Embeddings V2 |
+| **AI Guardrails** | Basic content filtering | ✅ AWS Bedrock Guardrails |
+
+---
+
+## Tech Stack
+
+### Core Technologies
+- **Node.js** + **Express** (Backend API)
+- **Redis** (Product store, agentic AI memory, conversational history, and semantic caching with Redis LangCache)
+- **LangGraph** (AI workflow orchestration)
+- **HTML + CSS + Vanilla JS** (Frontend)
+
+### AI Providers
+- **Main Version**: OpenAI API (GPT-4 for intelligent responses)
+- **AWS Bedrock Version**: AWS Bedrock (Claude 3.5 Sonnet + Titan Text Embeddings V2)
 
 ---
 
@@ -144,10 +115,6 @@ The grocery agent uses a LangGraph-powered AI agent that routes requests through
 3. **Specialized Tools**: Recipe ingredients, product search, cart operations, direct answers
 4. **Services Layer**: Product, cart, and chat services
 5. **Redis Storage**: Vector embeddings, semantic cache, and session data
-
-![Technical architecture](./technical-diagrams/architecture-overview.png)
-
-![Technical architecture - expanded](./technical-diagrams/mermaid-flowchart.svg)
 
 ### Project architecture
 
@@ -195,10 +162,12 @@ services/
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License - see the [LICENSE](/LICENSE) file for details.
 
 ---
 
 ## 🐞 Reporting Issues
 
-If you find a bug or have a feature request, [open an issue](https://github.com/redis-developer/Redish/issues).
+If you find a bug or have a feature request, [open an issue](https://github.com/redis-developer/shopping-ai-agent-langgraph-js-demo/issues).
+
+---

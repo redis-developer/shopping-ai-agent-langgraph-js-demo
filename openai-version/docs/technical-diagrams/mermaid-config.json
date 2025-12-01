@@ -1,0 +1,53 @@
+{
+  "theme": "base",
+  "themeVariables": {
+    "fontFamily": "Space Mono, monospace",
+    "fontSize": "14px",
+    "primaryColor": "#8a99a0",
+    "primaryTextColor": "#000000",
+    "primaryBorderColor": "#FF4438",
+    "lineColor": "#FF4438",
+    "secondaryColor": "#8a99a0",
+    "tertiaryColor": "#ffffff",
+    "background": "#ffffff",
+    "mainBkg": "#ffffff",
+    "secondBkg": "#8a99a0",
+    "tertiaryBkg": "#ffffff",
+    "primaryColorVariant": "#FF4438",
+    "darkMode": false,
+    "edgeLabelBackground": "#ffffff",
+    "clusterBkg": "#ffffff",
+    "clusterBorder": "#8a99a0",
+    "defaultLinkColor": "#FF4438",
+    "titleColor": "#000000",
+    "nodeTextColor": "#000000",
+    "nodeBorder": "#8a99a0",
+    "actorBorder": "#8a99a0",
+    "actorBkg": "#ffffff",
+    "actorTextColor": "#000000",
+    "actorLineColor": "#FF4438",
+    "labelBoxBorderColor": "#8a99a0",
+    "labelBoxBkgColor": "#ffffff",
+    "labelTextColor": "#000000",
+    "loopTextColor": "#000000",
+    "activationBorderColor": "#8a99a0",
+    "activationBkgColor": "#ffffff",
+    "sequenceNumberColor": "#ffffff"
+  },
+  "flowchart": {
+    "nodeSpacing": 50,
+    "rankSpacing": 50,
+    "curve": "linear"
+  },
+  "sequence": {
+    "diagramMarginX": 50,
+    "diagramMarginY": 50,
+    "actorMargin": 50,
+    "width": 150,
+    "height": 65,
+    "boxMargin": 10,
+    "boxTextMargin": 5,
+    "noteMargin": 10,
+    "messageMargin": 35
+  }
+}

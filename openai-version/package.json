@@ -1,0 +1,26 @@
+{
+  "name": "redish",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node index.js",
+    "load-products": "node scripts/load-products.js"
+  },
+  "dependencies": {
+    "@langchain/core": "^0.3.72",
+    "@langchain/langgraph": "^0.4.6",
+    "@langchain/openai": "^0.6.9",
+    "@redis-ai/langcache": "^0.10.1",
+    "cookie-parser": "~1.4.7",
+    "csv-parse": "^6.1.0",
+    "dotenv": "16.4.5",
+    "express": "~5.1.0",
+    "express-handlebars": "^8.0.3",
+    "hbs": "~4.2.0",
+    "langsmith": "^0.3.67",
+    "morgan": "~1.10.0",
+    "openai": "5.8.2",
+    "redis": "^5.5.6"
+  }
+}

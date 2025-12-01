@@ -1,0 +1,21 @@
+version: '3.9'
+
+services:
+  redish-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: redish-app:latest
+    container_name: redish-app
+    ports:
+      - "${SERVER_PORT:-3000}:${SERVER_PORT:-3000}"
+    env_file:
+      - ./.env
+    environment:
+      # Use Redis Cloud URL from .env file
+      REDIS_URL: "${REDIS_URL}"
+      LANGCACHE_API_KEY: "${LANGCACHE_API_KEY}"
+      LANGCACHE_API_BASE_URL: "${LANGCACHE_API_BASE_URL}"
+      LANGCACHE_CACHE_ID: "${LANGCACHE_CACHE_ID}"
+      OPENAI_API_KEY: "${OPENAI_API_KEY}"
+      MODEL_NAME: "${MODEL_NAME}"
