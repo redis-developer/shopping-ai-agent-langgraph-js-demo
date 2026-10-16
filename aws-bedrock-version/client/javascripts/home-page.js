@@ -1,4 +1,4 @@
-import { sendChatMessage } from '@services/chatService.js';
+import { sendChatMessage } from '@services/chat-service.js';
 import { DOM_IDS, CSS_SELECTORS } from '@utils/constants.js';
 
 import { ChatWindow } from '@components/chat/chat-window/chat-window.js';
@@ -23,13 +23,12 @@ export class ShoppingApp {
 
     init() {
         this.sessionManager = new SessionManager(
-            (newSession) => this.handleSessionEnd(newSession),
             () => this.handleNewChat()
         );
 
         const session = this.sessionManager.initializeSession();
+        this.userId = session.userId;
         this.sessionId = session.sessionId;
-        this.currentChatId = session.currentChatId;
 
         this.cartCount = new CartCount(CSS_SELECTORS.CART_COUNT);
         this.cartButton = new CartButton(
@@ -77,21 +76,22 @@ export class ShoppingApp {
         this.chatWindow.addMessage(message, 'user');
         this.chatWindow.showTypingIndicator();
 
-        const useSmartRecall = document.getElementById(DOM_IDS.MEMORY_TOGGLE)?.checked || false;
+        const lookupSimilarResponses = document.getElementById(DOM_IDS.LOOKUP_SIMILAR_RESPONSES_TOGGLE)?.checked ?? true;
 
-        await sendChatMessage(this.sessionId, this.currentChatId, message, {
-            useSmartRecall,
+        await sendChatMessage(this.userId, this.sessionId, message, {
+            lookupSimilarResponses,
             onSuccess: (chatMessage) => {
                 this.chatWindow.hideTypingIndicator();
                 this.chatWindow.addMessage(
                     chatMessage.content,
                     'assistant',
                     chatMessage.isCachedResponse,
-                    chatMessage.responseTime
+                    chatMessage.responseTime,
+                    chatMessage.usage
                 );
 
                 if (chatMessage.content && chatMessage.content.includes('ID:') && !this.cartCountLoaded) {
-                    this.cartCount.load(this.sessionId);
+                    this.cartCount.load(this.userId);
                     this.cartCountLoaded = true;
                 }
             },
@@ -106,7 +106,7 @@ export class ShoppingApp {
     }
 
     async handleProductAction(productId, buttonElement) {
-        await this.cartButton.addToCartFromChat(this.sessionId, productId, buttonElement);
+        await this.cartButton.addToCartFromChat(this.userId, productId, buttonElement);
     }
 
     handleCartSuccess(result) {
@@ -116,12 +116,6 @@ export class ShoppingApp {
 
     handleCartError(error) {
         NotificationSystem.error('Failed to add to cart. Please try again.');
-    }
-
-    handleSessionEnd(newSession) {
-        this.chatWindow.showWelcomeMessage();
-        this.cartCount.update(0);
-        this.sessionId = newSession.sessionId;
     }
 
     handleNewChat() {

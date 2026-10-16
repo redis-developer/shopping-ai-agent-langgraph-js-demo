@@ -1,66 +1,67 @@
-import { createClient, SCHEMA_FIELD_TYPE, SCHEMA_VECTOR_FIELD_ALGORITHM } from 'redis';
+import { SCHEMA_FIELD_TYPE, SCHEMA_VECTOR_FIELD_ALGORITHM } from 'redis';
 
 import { readFileSync } from 'fs';
 import { parse } from 'csv-parse/sync';
-import CONFIG from '#config';
+import { getRedisClient } from '#modules/db/redis-client.js';
 
 import { generateEmbeddings } from '#modules/ai/helpers/embeddings.js';
 
-const client = await createClient({
-    url: CONFIG.redisUrl,
-}).on('error', (err) => console.log('Redis Client Error', err))
-  .connect();
+/**
+ * Create the consolidated search index with both text and vector fields
+ */
+async function createProductIndex() {
+    const client = await getRedisClient();
 
-// Create consolidated search index with both text and vector fields
-try {
-    await client.ft.create('idx:products', {
-        '$.name': {
-            type: SCHEMA_FIELD_TYPE.TEXT,
-            SORTABLE: true,
-            AS: 'name'
-        },
-        '$.description': {
-            type: SCHEMA_FIELD_TYPE.TEXT,
-            AS: 'description'
-        },
-        '$.category': {
-            type: SCHEMA_FIELD_TYPE.TAG,
-            AS: 'category'
-        },
-        '$.brand': {
-            type: SCHEMA_FIELD_TYPE.TAG,
-            AS: 'brand'
-        },
-        '$.salePrice': {
-            type: SCHEMA_FIELD_TYPE.NUMERIC,
-            AS: 'salePrice'
-        },
-        '$.marketPrice': {
-            type: SCHEMA_FIELD_TYPE.NUMERIC,
-            AS: 'marketPrice'
-        },
-        '$.rating': {
-            type: SCHEMA_FIELD_TYPE.NUMERIC,
-            AS: 'rating'
-        },
-        '$.productInfoEmbeddings': {
-            type: SCHEMA_FIELD_TYPE.VECTOR,
-            TYPE: 'FLOAT32',
-            AS: 'embedding',
-            ALGORITHM: SCHEMA_VECTOR_FIELD_ALGORITHM.HNSW,
-            DISTANCE_METRIC: 'L2',
-            DIM: 1536,
+    try {
+        await client.ft.create('idx:products', {
+            '$.name': {
+                type: SCHEMA_FIELD_TYPE.TEXT,
+                SORTABLE: true,
+                AS: 'name'
+            },
+            '$.description': {
+                type: SCHEMA_FIELD_TYPE.TEXT,
+                AS: 'description'
+            },
+            '$.category': {
+                type: SCHEMA_FIELD_TYPE.TAG,
+                AS: 'category'
+            },
+            '$.brand': {
+                type: SCHEMA_FIELD_TYPE.TAG,
+                AS: 'brand'
+            },
+            '$.salePrice': {
+                type: SCHEMA_FIELD_TYPE.NUMERIC,
+                AS: 'salePrice'
+            },
+            '$.marketPrice': {
+                type: SCHEMA_FIELD_TYPE.NUMERIC,
+                AS: 'marketPrice'
+            },
+            '$.rating': {
+                type: SCHEMA_FIELD_TYPE.NUMERIC,
+                AS: 'rating'
+            },
+            '$.productInfoEmbeddings': {
+                type: SCHEMA_FIELD_TYPE.VECTOR,
+                TYPE: 'FLOAT32',
+                AS: 'embedding',
+                ALGORITHM: SCHEMA_VECTOR_FIELD_ALGORITHM.HNSW,
+                DISTANCE_METRIC: 'L2',
+                DIM: 1536,
+            }
+        }, {
+            ON: 'JSON',
+            PREFIX: 'products:'
+        });
+        console.log('✅ Search index created successfully');
+    } catch (e) {
+        if (e.message === 'Index already exists') {
+            console.log('📋 Search index exists already, skipped creation.');
+        } else {
+            console.error('❌ Error creating search index:', e);
         }
-    }, {
-        ON: 'JSON',
-        PREFIX: 'products:'
-    });
-    console.log('✅ Search index created successfully');
-} catch (e) {
-    if (e.message === 'Index already exists') {
-        console.log('📋 Search index exists already, skipped creation.');
-    } else {
-        console.error('❌ Error creating search index:', e);
     }
 }
 
@@ -71,6 +72,9 @@ try {
  * @param {number} maxProducts - Maximum number of products to load (default: 1000)
  */
 export async function loadProductsFromCSV(csvFilePath, batchSize = 50, maxProducts = 1000) {
+    const client = await getRedisClient();
+    await createProductIndex();
+
     try {
         console.log('📋 Reading CSV file:', csvFilePath);
         
@@ -222,6 +226,7 @@ export async function loadProductsFromCSV(csvFilePath, batchSize = 50, maxProduc
  * Check Redis memory usage before loading
  */
 export async function checkRedisMemory() {
+    const client = await getRedisClient();
     try {
         const info = await client.info('memory');
         const lines = info.split('\r\n');

@@ -1,17 +1,28 @@
 import { ChatOpenAI } from "@langchain/openai";
 import { AIMessage } from "@langchain/core/messages";
-import { groceryTools } from "./tools.js";
-import { checkSemanticCache, saveToSemanticCache } from "../../chat/domain/chat-service.js";
+import { ToolNode } from "@langchain/langgraph/prebuilt";
+import { shoppingTools } from "./tools/shopping-tools.js";
+import { memoryTools } from "./tools/memory-tools.js";
+import { checkSemanticCache, saveToSemanticCache } from "#modules/chat/domain/chat-service.js";
 import { determineToolBasedCacheTTL } from "../helpers/caching.js";
-import CONFIG from "../../../config.js";
+import { searchLongTermMemories } from "#modules/chat/domain/agent-memory-service.js";
+import CONFIG from "#config";
+
+const allTools = [...shoppingTools, ...memoryTools];
 
 /**
  * Node 1: Query Cache Check
  */
 export const queryCacheCheck = async (state) => {
-    const lastUserMessage = state.messages.findLast(m => m.getType() === "human");
+    const lastUserMessage = state.messages.findLast((message) => message.getType() === "human");
     const userQuery = lastUserMessage?.content || "";
-    
+
+    // Look-up of similar responses is turned off in the UI, so skip the semantic cache lookup
+    if (state.lookupSimilarResponses === false) {
+        console.log("⏭️ Look-up of similar responses is off - skipping the semantic cache lookup");
+        return { cacheStatus: "miss" };
+    }
+
     console.log(`🔍 Checking semantic cache for: "${userQuery.substring(0, 50)}..."`);
     
     try {
@@ -21,7 +32,6 @@ export const queryCacheCheck = async (state) => {
             console.log("🎯 Semantic cache HIT - returning previous response");
             return {
                 cacheStatus: "hit",
-                result: cachedResult,
                 messages: [...state.messages, new AIMessage(cachedResult)],
                 sessionId: state.sessionId
             };
@@ -43,7 +53,24 @@ export const queryCacheCheck = async (state) => {
 };
 
 /**
- * Node 2: Personal Shopper Agent
+ * Node 2: Retrieve Long Term Memories
+ * Fetch the user's most relevant long-term memories for the current query. Search
+ * is ranked by semantic similarity to the query and filtered to this user only, so
+ * the shopper agent sees preferences/history actually pertinent to *this* question
+ * (e.g. "pasta ingredients" surfaces a stored gluten-free preference).
+ * Runs once per turn, before the shopper agent starts calling tools.
+ */
+export const retrieveLongTermMemories = async (state) => {
+    const lastUserMessage = state.messages.findLast((message) => message.getType() === "human");
+    const query = lastUserMessage?.content || "";
+
+    const memories = await searchLongTermMemories(state.userId, query);
+
+    return { longTermMemories: memories.map((memory) => memory.text) };
+};
+
+/**
+ * Node 3: Personal Shopper Agent
  *
  * Specialized agent with tools for shopping-related tasks
  */
@@ -54,165 +81,84 @@ export const personalShopperAgent = async (state) => {
         apiKey: CONFIG.openAiApiKey 
     });
 
-    const systemPrompt = `You are a helpful grocery shopping assistant. You have access to specialized tools that return JSON data.
+    // Long-term memories were retrieved by the retrieve_long_term_memories node
+    const userContextBlock = state.longTermMemories?.length
+        ? `\n**What we know about this shopper (from long-term memory):**\n${state.longTermMemories.map((memoryText) => `- ${memoryText}`).join("\n")}\n`
+        : "";
+    const conversationSummaryBlock = state.conversationSummary
+        ? `\n**Summary of the earlier conversation in this session:**\n${state.conversationSummary}\n`
+        : "";
 
-🍳 **fast_recipe_ingredients**: For recipe/ingredient questions (USE THIS FIRST for recipes!)
-- Use when user asks "ingredients for [recipe]" or "what do I need to make [dish]"
-- Returns ingredient list with ONE suggested product each for SPEED
-- Much faster than searching for each ingredient separately
-- Always offer: "Want more options for any ingredient? Just ask!"
-- Example: "ingredients for butter chicken" → Use this tool!
+    const systemPrompt = `You are a helpful grocery shopping assistant. Use your tools to find recipe ingredients, search products, manage the cart, and answer cooking questions.
+${userContextBlock}${conversationSummaryBlock}
+**Tool selection:**
+- For recipe/ingredient questions, ALWAYS use find_recipe_ingredient_products first.
+- For "more options" or "more brands" requests, use search_products.
 
-🔍 **search_products**: For specific product searches and follow-ups
-- Use when user wants to "find [specific item]" or "show me [products]"
-- Use when user asks for "more options" or "more brands" after recipe ingredients
-- Returns products with cart icons and product page links
-- Format: Show products with "🛒 Add to Cart" and "👁️ View Details" options
+**Response formatting:**
+- Tool results are JSON. Present them in plain language, never as raw JSON.
+- Show each product in exactly this format: **Product Name** by Brand - ₹Price (ID: 12345) [🛒 Add]
+- Always include the product ID as a plain number, like (ID: 3218). Do NOT create markdown links with # or (), and do not add any JavaScript code.
+- For recipe ingredients, show each ingredient with its suggested product, then offer: "Want more options for any ingredient? Just ask!"
+- Use emojis and clear structure. Keep responses helpful, fast, and easy to interact with.`;
 
-🛒 **Cart Tools**: For cart management
-- add_to_cart: Add products by ID
-- view_cart: Show cart contents with totals
-- clear_cart: Empty the cart
-
-🧠 **direct_answer**: For general cooking/food knowledge
-- Cooking tips, techniques, nutrition advice
-- Food storage, preparation methods
-- General culinary knowledge (not recipe ingredients!)
-
-**CRITICAL Tool Selection Rules:**
-1. Recipe/ingredient questions → ALWAYS use fast_recipe_ingredients FIRST
-2. "More options" requests → search_products
-3. Cart operations → appropriate cart tool
-4. General cooking tips → direct_answer
-
-**Response Formatting Rules:**
-1. Parse ALL JSON tool responses before presenting to user
-2. For recipe ingredients: Show ingredient + suggested product + cart icon + product link
-3. For product searches: Show products with cart icons and "View Details" links  
-4. Always include product IDs and make them clickable
-5. Use engaging formatting with emojis and clear structure
-6. For products, use this exact format: **Product Name** by Brand - ₹Price (ID: 12345) [🛒 Add] [👁️ Details]
-7. Make cart icons clickable by using proper product IDs
-8. After showing ingredients, always offer: "Want more brands for any ingredient? Just ask!"
-9. IMPORTANT: Do NOT create markdown links with # or (). Product IDs should be plain numbers like (ID: 3218). Do not add any JavaScript code.
-
-Session ID: ${state.sessionId}
-Make responses helpful, fast, and easy to interact with!`;
-
-    const modelWithTools = model.bindTools(groceryTools);
+    const modelWithTools = model.bindTools(allTools);
 
     try {
-        let currentMessages = [
+        const response = await modelWithTools.invoke([
             { role: "system", content: systemPrompt },
             ...state.messages
-        ];
-        let toolResults = [];
-        let foundProducts = [];
+        ]);
 
-        while (true) {
-            const response = await modelWithTools.invoke(currentMessages);
-            currentMessages.push(response);
-
-            if (!response.tool_calls || response.tool_calls.length === 0) {
-                console.log("🛒 Grocery agent finished with direct response");
-
-                return {
-                    result: response.content,
-                    messages: [...state.messages, new AIMessage(response.content)],
-                    toolResults,
-                    foundProducts,
-                    sessionId: state.sessionId
-                };
-            }
-
-            for (const toolCall of response.tool_calls) {
-                console.log(`🔧 Grocery agent using tool: ${toolCall.name}`);
-
-                // Find and invoke the appropriate tool
-                const tool = groceryTools.find(t => t.name === toolCall.name);
-
-                let toolResultString;
-                let parsedResult;
-                let success = false;
-                let error;
-
-                if (tool) {
-                    // Add sessionId to tool arguments if needed
-                    const toolArgs = { ...toolCall.args };
-                    if (['add_to_cart', 'view_cart', 'clear_cart', 'save_to_semantic_cache'].includes(toolCall.name)) {
-                        toolArgs.sessionId = state.sessionId;
-                    }
-
-                    toolResultString = await tool.invoke(toolArgs);
-
-                    // Parse JSON response
-                    try {
-                        parsedResult = JSON.parse(toolResultString);
-                        success = parsedResult.success !== false;
-                        error = parsedResult.error;
-
-                        // Extract products for summary based on tool name
-                        if (toolCall.name === "search_products" && parsedResult.products) {
-                            foundProducts = parsedResult.products;
-                        } else if (toolCall.name === "fast_recipe_ingredients" && parsedResult.ingredientProducts) {
-                            foundProducts = parsedResult.ingredientProducts
-                                .filter(item => item.suggestedProduct)
-                                .map(item => item.suggestedProduct);
-                        }
-                    } catch (parseError) {
-                        console.warn("Could not parse tool result as JSON:", parseError);
-                        success = false;
-                        error = "Failed to parse tool result";
-                    }
-                } else {
-                    success = false;
-                    error = "Unknown tool requested";
-                    toolResultString = JSON.stringify({
-                        success: false,
-                        error
-                    });
-                }
-
-                // Store structured tool result
-                toolResults.push({
-                    toolName: toolCall.name,
-                    success,
-                    error,
-                    result: parsedResult
-                });
-
-                currentMessages.push({
-                    role: "tool",
-                    content: toolResultString,
-                    tool_call_id: toolCall.id,
-                });
-            }
-        }
+        // The messages reducer appends the reply. If it has tool calls, the graph
+        // routes to the tools node and then back here; otherwise it moves on.
+        return { messages: [response] };
     } catch (error) {
         console.error("❌ Grocery shopping agent error:", error);
+        const apology = "I apologize, but I'm having trouble with your shopping request right now. Please try asking about recipe ingredients, searching for products, or managing your cart!";
         return {
-            result: "I apologize, but I'm having trouble with your grocery request right now. Please try asking about recipe ingredients, searching for products, or managing your cart!",
-            messages: [...state.messages, new AIMessage("I apologize, but I'm having trouble with your grocery request right now. Please try asking about recipe ingredients, searching for products, or managing your cart!")],
-            toolsUsed: ["error"],
-            toolResults: [JSON.stringify({ success: false, error: error.message })],
-            sessionId: state.sessionId
+            messages: [new AIMessage(apology)],
+            error: error.message
         };
     }
 };
 
 /**
- * Node 3: Process Results for caching
+ * Node 4: Tools
+ * Runs the tool calls requested by the shopper agent and appends the results as tool messages.
+ * userId and sessionId reach the tools through the graph's run config (config.configurable).
+ */
+export const toolNode = new ToolNode(allTools);
+
+/**
+ * Node 5: Process Results for caching
  */
 export const processWorkOutputWithCaching = async (state) => {
-    if (!state.result) {
+    // Nothing to cache if the model call failed (the reply is just an apology)
+    if (state.error) {
         return {};
     }
 
-    const lastUserMessage = state.messages.findLast(m => m.getType() === "human");
+    const reply = state.messages.at(-1).content;
+
+    const lastUserMessage = state.messages.findLast((message) => message.getType() === "human");
     const query = lastUserMessage?.content || "";
 
     // Determine cache TTL based on tool execution results
-    const cacheTTL = determineToolBasedCacheTTL(state.toolResults || []);
+    // The history loaded from Agent Memory has no tool messages, so every tool
+    // message in state.messages belongs to the current turn
+    const toolResults = state.messages
+        .filter((message) => message.getType() === "tool")
+        .map((toolMessage) => {
+            let success;
+            try {
+                success = JSON.parse(toolMessage.content).success !== false;
+            } catch {
+                success = false;
+            }
+            return { toolName: toolMessage.name, success };
+        });
+    const cacheTTL = determineToolBasedCacheTTL(toolResults);
 
     // Don't cache if TTL is 0 (personal/dynamic operations or failures)
     if (cacheTTL === 0) {
@@ -224,7 +170,7 @@ export const processWorkOutputWithCaching = async (state) => {
         // Use LLM-based GDPR sanitization
         const [sanitizedQuery, sanitizedResponse ] =  await Promise.all([
             dataComplianceAgent(query),
-            dataComplianceAgent(state.result)
+            dataComplianceAgent(reply)
         ]);
 
         console.log(`💾 Saving sanitized query to cache: "${sanitizedQuery.substring(0, 50)}..."`);

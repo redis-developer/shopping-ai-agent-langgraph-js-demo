@@ -452,7 +452,6 @@ body {
     background: var(--white);
     border: var(--border);
     width: 400px;
-    height: 600px;
     box-shadow: var(--shadow-hover);
     position: absolute;
     bottom: 80px;
@@ -518,10 +517,24 @@ body {
     gap: 0.5rem;
 }
 
-.smart-toggle {
+.lookup-toggle-row {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-bottom: 0.5rem;
+}
+
+.info-icon {
+    font-size: 0.8rem;
+    cursor: help;
+}
+
+.lookup-toggle {
     display: flex;
     align-items: center;
     gap: 0.3rem;
+    color: var(--dark);
+    cursor: pointer;
     font-family: 'Inter', sans-serif;
     font-size: 0.7rem;
     font-weight: 700;
@@ -549,20 +562,20 @@ body {
     transition: all 0.1s ease;
 }
 
-#memory-toggle:checked + .toggle-slider {
+#lookup-similar-responses-toggle:checked + .toggle-slider {
     background: var(--primary);
 }
 
-#memory-toggle:checked + .toggle-slider::after {
+#lookup-similar-responses-toggle:checked + .toggle-slider::after {
     background: var(--white);
     transform: translateX(14px);
 }
 
-#memory-toggle {
+#lookup-similar-responses-toggle {
     display: none;
 }
 
-.end-session-btn, .minimize-chat {
+.minimize-chat {
     background: var(--white);
     border: var(--border);
     color: var(--dark);
@@ -573,7 +586,7 @@ body {
     box-shadow: var(--shadow);
 }
 
-.end-session-btn:hover, .minimize-chat:hover {
+.minimize-chat:hover {
     background: var(--danger);
     color: var(--white);
     box-shadow: var(--shadow-hover);
@@ -866,18 +879,29 @@ body {
     color: var(--dark);
 }
 
-.cache-notice {
+.response-info {
     background: var(--warning);
     border: var(--border);
     color: var(--dark);
-    padding: 0.75rem;
+    padding: 0.5rem 0.75rem;
     margin: 0.5rem 0;
     font-size: 0.85rem;
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
     box-shadow: var(--shadow);
+}
+
+.response-info summary {
+    cursor: pointer;
+    font-weight: 700;
+}
+
+.response-info ul {
+    margin: 0.5rem 0 0 1rem;
+    padding: 0;
+}
+
+.response-info p {
+    margin: 0.5rem 0 0;
+    font-weight: 700;
 }
 
 .message-time {

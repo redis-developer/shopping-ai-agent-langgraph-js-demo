@@ -8,7 +8,7 @@ export class ChatWindow {
         this.onProductAction = onProductAction;
     }
 
-    addMessage(message, sender, isCached = false, responseTime = null) {
+    addMessage(message, sender, isCached = false, responseTime = null, usage = null) {
         if (!this.messagesContainer) return;
 
         const chatMessage = new ChatMessage(
@@ -16,6 +16,7 @@ export class ChatWindow {
             sender,
             isCached,
             responseTime,
+            usage,
             this.onProductAction
         );
 
@@ -41,20 +42,6 @@ export class ChatWindow {
     clear() {
         if (this.messagesContainer) {
             this.messagesContainer.innerHTML = '';
-        }
-    }
-
-    showWelcomeMessage() {
-        if (this.messagesContainer) {
-            this.messagesContainer.innerHTML = `
-                <div class="welcome-message">
-                    <div class="assistant-avatar">🤖</div>
-                    <div class="message-content">
-                        <p>Session ended! 👋 Starting fresh...</p>
-                        <p>What would you like to cook today?</p>
-                    </div>
-                </div>
-            `;
         }
     }
 

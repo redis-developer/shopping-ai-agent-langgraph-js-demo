@@ -6,17 +6,17 @@ const router = Router();
 
 // Add product to cart
 router.post('/add', async function(req, res, next) {
-    const { sessionId, productId, quantity = 1 } = req.body;
+    const { userId, productId, quantity = 1 } = req.body;
 
-    if (!sessionId || !productId) {
+    if (!userId || !productId) {
         return res.status(HttpStatusCode.BAD_REQUEST).json({ 
             success: false, 
-            error: 'Missing sessionId or productId' 
+            error: 'Missing userId or productId' 
         });
     }
 
     try {
-        const result = await addItemToCart(sessionId, productId, quantity);
+        const result = await addItemToCart(userId, productId, quantity);
         res.json(result);
     } catch (error) {
         next(error);
@@ -24,18 +24,18 @@ router.post('/add', async function(req, res, next) {
 });
 
 // Get cart contents
-router.get('/:sessionId', async function(req, res, next) {
-    const { sessionId } = req.params;
+router.get('/:userId', async function(req, res, next) {
+    const { userId } = req.params;
 
-    if (!sessionId) {
+    if (!userId) {
         return res.status(HttpStatusCode.BAD_REQUEST).json({ 
             success: false, 
-            error: 'Missing sessionId' 
+            error: 'Missing userId' 
         });
     }
 
     try {
-        const cart = await getCart(sessionId);
+        const cart = await getCart(userId);
         res.json(cart);
     } catch (error) {
         next(error);
@@ -43,11 +43,11 @@ router.get('/:sessionId', async function(req, res, next) {
 });
 
 // Remove item from cart
-router.delete('/:sessionId/:productId', async function(req, res, next) {
-    const { sessionId, productId } = req.params;
+router.delete('/:userId/:productId', async function(req, res, next) {
+    const { userId, productId } = req.params;
 
     try {
-        const result = await removeItemFromCart(sessionId, productId);
+        const result = await removeItemFromCart(userId, productId);
         res.json(result);
     } catch (error) {
         next(error);
@@ -55,11 +55,11 @@ router.delete('/:sessionId/:productId', async function(req, res, next) {
 });
 
 // Clear entire cart
-router.delete('/:sessionId', async function(req, res, next) {
-    const { sessionId } = req.params;
+router.delete('/:userId', async function(req, res, next) {
+    const { userId } = req.params;
 
     try {
-        const result = await clearCart(sessionId);
+        const result = await clearCart(userId);
         res.json(result);
     } catch (error) {
         next(error);

@@ -19,25 +19,28 @@ export function determineToolBasedCacheTTL(toolResults = []) {
     // Extract tool names for TTL logic
     const toolNames = toolResults.map(tr => tr.toolName);
 
-    // Don't cache personal/dynamic operations
+    // Don't cache personal/dynamic operations and memory operations
     const personalTools = [
         'add_to_cart',
         'view_cart',
-        'clear_cart'
+        'clear_cart',
+        'save_memory',              // Memory write operation - never cache
+        'view_recent_conversation', // Conversation changes every turn - never cache
+        'search_my_memories'        // Memory searches should always be fresh - never cache
     ];
 
     if (personalTools.some(tool => toolNames.includes(tool))) {
-        console.log(`🚫 Personal operation detected: ${toolNames.filter(t => personalTools.includes(t)).join(', ')}`);
+        console.log(`🚫 Personal/dynamic operation detected: ${toolNames.filter((toolName) => personalTools.includes(toolName)).join(', ')}`);
         return 0; // Don't cache
     }
 
     // Long TTL for recipe/ingredient content (changes rarely)
     const recipeTools = [
-        'fast_recipe_ingredients'  // Recipe ingredients don't change often
+        'find_recipe_ingredient_products'  // Recipe ingredients don't change often
     ];
 
     if (recipeTools.some(tool => toolNames.includes(tool))) {
-        console.log(`🍳 Recipe content detected: ${toolNames.filter(t => recipeTools.includes(t)).join(', ')}`);
+        console.log(`🍳 Recipe content detected: ${toolNames.filter((toolName) => recipeTools.includes(toolName)).join(', ')}`);
         return 24 * 60 * 60 * 1000; // 24 hours
     }
 
@@ -47,7 +50,7 @@ export function determineToolBasedCacheTTL(toolResults = []) {
     ];
 
     if (knowledgeTools.some(tool => toolNames.includes(tool))) {
-        console.log(`📚 Knowledge content detected: ${toolNames.filter(t => knowledgeTools.includes(t)).join(', ')}`);
+        console.log(`📚 Knowledge content detected: ${toolNames.filter((toolName) => knowledgeTools.includes(toolName)).join(', ')}`);
         return 12 * 60 * 60 * 1000; // 12 hours
     }
 
@@ -57,7 +60,7 @@ export function determineToolBasedCacheTTL(toolResults = []) {
     ];
 
     if (searchTools.some(tool => toolNames.includes(tool))) {
-        console.log(`🔍 Product search detected: ${toolNames.filter(t => searchTools.includes(t)).join(', ')}`);
+        console.log(`🔍 Product search detected: ${toolNames.filter((toolName) => searchTools.includes(toolName)).join(', ')}`);
         return 2 * 60 * 60 * 1000; // 2 hours
     }
 

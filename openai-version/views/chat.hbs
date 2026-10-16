@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>{{app_name}} - Fresh Groceries Delivered</title>
+    <title>{{appName}} - Fresh Groceries Delivered</title>
     <link rel="stylesheet" href="./stylesheets/chat.css" media="screen,print" >
     <link rel="icon" href="images/redis-avatar.png" type="image/png">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -12,17 +12,17 @@
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 
     <!-- Primary Meta Tags -->
-    <meta name="title" content="{{app_name}} - Fresh Groceries Online">
+    <meta name="title" content="{{appName}} - Fresh Groceries Online">
     <meta name="description" content="Fresh groceries delivered to your door with AI shopping assistant.">
     <meta name="keywords" content="Groceries, Shopping, AI Assistant, Fresh Food, Delivery">
 
-    <meta property="title" content="{{app_name}}">
+    <meta property="title" content="{{appName}}">
     <meta property="description" content="Fresh groceries delivered to your door with AI shopping assistant.">
 
     <!-- Open Graph -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://github.com/booleanhunter/redibuddy">
-    <meta property="og:title" content="{{app_name}} - Fresh Groceries Online">
+    <meta property="og:title" content="{{appName}} - Fresh Groceries Online">
     <meta property="og:description" content="Fresh groceries delivered to your door with AI shopping assistant.">
     <meta property="og:image" content="https://github.com/booleanhunter/redibuddy/raw/main/images/redis-avatar.png">
 
@@ -44,7 +44,7 @@
             <div class="logo-section">
                 <h1 class="site-logo">
                     <i class="fas fa-shopping-basket"></i>
-                    {{app_name}}
+                    {{appName}}
                 </h1>
                 <span class="tagline">FRESH • FAST • AI-POWERED</span>
             </div>
@@ -152,15 +152,15 @@
     </section>
 
     <!-- Chat Assistant (Floating) -->
-    <div class="chat-assistant" id="chatAssistant">
+    <div class="chat-assistant" id="chat-assistant">
         <!-- Chat Toggle Button -->
-        <button class="chat-toggle" id="chatToggle">
+        <button class="chat-toggle" id="chat-toggle">
             <i class="fas fa-robot"></i>
             <span class="chat-bubble">NEED HELP FINDING SOMETHING? 🤔</span>
         </button>
 
         <!-- Chat Window -->
-        <div class="chat-window-container" id="chatWindow">
+        <div class="chat-window-container" id="chat-window">
             <div class="chat-header">
                 <div class="assistant-info">
                     <div class="assistant-avatar">🤖</div>
@@ -170,15 +170,7 @@
                     </div>
                 </div>
                 <div class="chat-actions">
-                    {{!-- <label class="smart-toggle">
-                        <input type="checkbox" id="memory-toggle" checked>
-                        <span class="toggle-slider"></span>
-                        <span class="toggle-label">SMART MEMORY</span>
-                    </label> --}}
-                    <button id="end-session" class="end-session-btn">
-                        <i class="fas fa-sign-out-alt"></i>
-                    </button>
-                    <button class="minimize-chat" id="minimizeChat">
+                    <button class="minimize-chat" id="minimize-chat">
                         <i class="fas fa-minus"></i>
                     </button>
                 </div>
@@ -203,6 +195,14 @@
                 </div>
                 
                 <form id="chat-form" class="chat-input-form">
+                    <div class="lookup-toggle-row">
+                        <label class="lookup-toggle">
+                            <input type="checkbox" id="lookup-similar-responses-toggle" checked>
+                            <span class="toggle-slider"></span>
+                            <span class="toggle-label">Look-up similar responses</span>
+                        </label>
+                        <span class="info-icon" role="img" aria-label="Reuse earlier answers to similar questions from semantic cache for faster replies and fewer tokens" title="Reuse earlier answers to similar questions from semantic cache for faster replies and fewer tokens">ℹ️</span>
+                    </div>
                     <div class="input-container">
                         <input 
                             type="text" 

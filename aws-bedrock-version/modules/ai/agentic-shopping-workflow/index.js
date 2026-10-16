@@ -4,27 +4,35 @@ import { StateGraph, START, END } from "@langchain/langgraph";
 import { HumanMessage, AIMessage } from "@langchain/core/messages";
 
 import { ShoppingAgentState } from "./state.js";
-import { queryCacheCheck, frontDeskAgent, personalShopperAgent, processWorkOutputWithCaching } from "./nodes.js";
+import { toolsCondition } from "@langchain/langgraph/prebuilt";
 
-import ChatRepository from "../../chat/data/chat-repository.js";
+import { queryCacheCheck, frontDeskAgent, personalShopperAgent, processWorkOutputWithCaching, retrieveLongTermMemories, toolNode } from "./nodes.js";
 
-const chatRepository = new ChatRepository();
+import { getWorkingMemory, addConversationTurn } from "#modules/chat/domain/agent-memory-service.js";
+import { UsageCallbackHandler } from "../helpers/usage-callback-handler.js";
 
 export const createAgenticAIShoppingWorkflow = () => {
     const graph = new StateGraph(ShoppingAgentState)
         .addNode("query_cache_check", queryCacheCheck)
         .addNode("front_desk_agent", frontDeskAgent)
+        .addNode("retrieve_long_term_memories", retrieveLongTermMemories)
         .addNode("personal_shopper_agent", personalShopperAgent)
+        .addNode("tools", toolNode)
         .addNode("process_work_output_with_caching", processWorkOutputWithCaching)
 
         .addEdge(START, "query_cache_check")
         .addConditionalEdges("query_cache_check", (state) => {
             return state.cacheStatus === "hit" ? END : "front_desk_agent";
-        })
+        }, ["front_desk_agent", END])
         .addConditionalEdges("front_desk_agent", (state) => {
-            return state.guardrailTestResult === "blocked" ? "process_work_output_with_caching" : "personal_shopper_agent";
+            return state.guardrailTestResult === "blocked" ? "process_work_output_with_caching" : "retrieve_long_term_memories";
+        }, ["process_work_output_with_caching", "retrieve_long_term_memories"])
+        .addEdge("retrieve_long_term_memories", "personal_shopper_agent")
+        .addConditionalEdges("personal_shopper_agent", toolsCondition, {
+            tools: "tools",
+            [END]: "process_work_output_with_caching"
         })
-        .addEdge("personal_shopper_agent", "process_work_output_with_caching")
+        .addEdge("tools", "personal_shopper_agent")
         .addEdge("process_work_output_with_caching", END)
 
         .compile();
@@ -37,15 +45,16 @@ export const createAgenticAIShoppingWorkflow = () => {
 export const shoppingWorkflowGraph = createAgenticAIShoppingWorkflow();
 
 export function getWorkflowExecutionSummary(graphResult) {
-    const toolNames = (graphResult.toolResults || []).map(tr => tr.toolName);
+    const toolNames = graphResult.messages
+        .filter((message) => message.getType() === "tool")
+        .map((toolMessage) => toolMessage.name);
 
     const summary = {
         toolsUsed: toolNames.length > 0 ? toolNames : ["none"],
         cacheStatus: graphResult.cacheStatus || "miss",
         guardrailTestResult: graphResult.guardrailTestResult || "not-tested",
-        finalResult: graphResult.result,
-        sessionId: graphResult.sessionId,
-        productsFound: graphResult.foundProducts?.length || 0
+        finalResult: graphResult.messages.at(-1).content,
+        sessionId: graphResult.sessionId
     };
 
     console.log("\n🛒 GROCERY SHOPPING EXECUTION SUMMARY:");
@@ -65,7 +74,7 @@ export function getWorkflowExecutionSummary(graphResult) {
                 case "add_to_cart": return "🛒 Add to Cart";
                 case "view_cart": return "👀 View Cart";
                 case "clear_cart": return "🗑️ Clear Cart";
-                case "fast_recipe_ingredients": return "🍳 Recipe Ingredients";
+                case "find_recipe_ingredient_products": return "🍳 Recipe Ingredients";
                 case "save_to_semantic_cache": return "💾 Save Cache";
                 case "error": return "❌ Error";
                 default: return `🔧 ${tool}`;
@@ -75,9 +84,6 @@ export function getWorkflowExecutionSummary(graphResult) {
         console.log(`Tool Count: ${summary.toolsUsed.length}`);
     }
 
-    if (summary.productsFound > 0) {
-        console.log(`Products Found: ${summary.productsFound}`);
-    }
     console.log("─".repeat(50));
 
     return summary;
@@ -85,47 +91,67 @@ export function getWorkflowExecutionSummary(graphResult) {
 
 /**
  * Main function for running the grocery shopping agent workflow
+ * Uses Redis Agent Memory for conversation history
  */
-export async function runShoppingAgentWorkflow(sessionId, chatId, message, useSmartRecall) {
-    const rawHistory = await chatRepository.getOrCreateChatHistory(sessionId, chatId);
+export async function runShoppingAgentWorkflow(userId, sessionId, message, lookupSimilarResponses) {
+    console.log(`\n${'='.repeat(60)}`);
+    console.log(`🚀 Shopping Agent Workflow - Session: ${sessionId}`);
+    console.log(`${'='.repeat(60)}\n`);
 
-    // Convert raw history to LangChain message format
-    const messages = rawHistory.map((msg) => {
+    // Get session memory from Redis Agent Memory
+    const workingMemory = await getWorkingMemory(sessionId);
+
+    // Convert working memory messages to LangChain message format
+    const messages = (workingMemory.messages || []).map((msg) => {
         return msg.role === "user"
             ? new HumanMessage(msg.content)
             : new AIMessage(msg.content);
     });
 
+    // Once the service summarizes a long session, older turns are only available via the
+    // summary. It is passed to the graph as state and added to the shopper's system prompt.
+    if (workingMemory.summary) {
+        console.log(`📝 Conversation summary: ${workingMemory.summary.substring(0, 150)}...`);
+    }
+    console.log(`💬 Messages in session memory: ${messages.length}`);
+
     // Add the new user message
     const userMessage = new HumanMessage(message);
     messages.push(userMessage);
 
-    // Run the workflow
+    // Run the workflow, adding up token usage across every model call in it
+    const usageHandler = new UsageCallbackHandler();
     const result = await shoppingWorkflowGraph.invoke({
+        userId,
         sessionId,
         messages,
+        conversationSummary: workingMemory.summary || undefined,
+        lookupSimilarResponses,
+    }, {
+        callbacks: [usageHandler],
+        // Read by the tools (cart and memory) via config.configurable
+        configurable: { userId, sessionId }
     });
 
     // Get execution summary for logging
     const executionSummary = getWorkflowExecutionSummary(result);
 
-    const finalReply = result.result || result.output;
+    const finalReply = result.messages.at(-1).content;
 
     const queryResult = {
         isCachedResponse: result.cacheStatus === "hit",
         content: finalReply,
+        usage: usageHandler.usage,
     };
 
-    // Save messages back to storage
-    await chatRepository.saveChatMessage(sessionId, chatId, {
-        role: "user",
-        content: message,
-    });
+    // Save conversation turn to Agent Memory (session memory)
+    console.log(`\n💾 Saving conversation to Agent Memory...`);
 
-    await chatRepository.saveChatMessage(sessionId, chatId, {
-        role: "assistant",
-        content: finalReply,
-    });
+    await addConversationTurn(sessionId, userId, message, finalReply);
+
+    console.log(`\n${'='.repeat(60)}`);
+    console.log(`✅ Workflow Complete`);
+    console.log(`${'='.repeat(60)}\n`);
 
     return queryResult;
 }

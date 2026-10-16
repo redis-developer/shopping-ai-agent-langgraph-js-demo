@@ -1,5 +1,6 @@
 
 services:
+  # Main application
   redish-app:
     build:
       context: .
@@ -15,4 +16,3 @@ services:
       LANGCACHE_API_KEY: "${LANGCACHE_API_KEY}"
       LANGCACHE_API_BASE_URL: "${LANGCACHE_API_BASE_URL}"
       LANGCACHE_CACHE_ID: "${LANGCACHE_CACHE_ID}"
-

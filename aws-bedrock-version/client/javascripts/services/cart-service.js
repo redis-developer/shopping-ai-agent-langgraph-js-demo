@@ -1,4 +1,4 @@
-export async function addToCart(sessionId, productId, quantity = 1, options = {}) {
+export async function addToCart(userId, productId, quantity = 1, options = {}) {
     const { onLoad, onSuccess, onError } = options;
 
     try {
@@ -8,7 +8,7 @@ export async function addToCart(sessionId, productId, quantity = 1, options = {}
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                sessionId,
+                userId,
                 productId,
                 quantity
             }),
@@ -28,13 +28,13 @@ export async function addToCart(sessionId, productId, quantity = 1, options = {}
     }
 }
 
-export async function loadCartCount(sessionId, options = {}) {
+export async function loadCartCount(userId, options = {}) {
     const { onLoad, onSuccess, onError } = options;
 
     try {
         onLoad?.();
 
-        const res = await fetch(`/api/cart/${sessionId}`);
+        const res = await fetch(`/api/cart/${userId}`);
 
         if (!res.ok) {
             onSuccess?.({ success: true, summary: { totalItems: 0 } });

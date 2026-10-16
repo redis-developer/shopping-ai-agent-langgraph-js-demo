@@ -1,16 +1,16 @@
 import CONFIG from '#config';
-import { getRedisClient } from '../../db/redis-client.js';
+import { getRedisClient } from '#modules/db/redis-client.js';
 
 export default class CartRepository {
 
     /**
      * Check if item exists in cart and return its details
-     * @param {string} sessionId - User session ID
+     * @param {string} userId - User ID
      * @param {string} productId - Product ID to check
      */
-    async checkItemExistsInCart(sessionId, productId) {
+    async checkItemExistsInCart(userId, productId) {
         const client = await getRedisClient();
-        const userKey = `users:${sessionId}`;
+        const userKey = `users:${userId}`;
         const existingItem = await client.json.get(userKey, {
             path: `$.cart.items[?(@.productId=='${productId}')]`
         });
@@ -23,13 +23,13 @@ export default class CartRepository {
 
     /**
      * Update quantity of existing item in cart
-     * @param {string} sessionId - User session ID
+     * @param {string} userId - User ID
      * @param {string} productId - Product ID
      * @param {number} newQuantity - New quantity
      */
-    async updateItemQuantity(sessionId, productId, newQuantity) {
+    async updateItemQuantity(userId, productId, newQuantity) {
         const client = await getRedisClient();
-        const userKey = `users:${sessionId}`;
+        const userKey = `users:${userId}`;
         await client.json.set(userKey, `$.cart.items[?(@.productId=='${productId}')].quantity`, newQuantity);
         await client.json.set(userKey, '$.cart.updatedAt', new Date().toISOString());
         await client.expire(userKey, 24 * 60 * 60);
@@ -39,26 +39,44 @@ export default class CartRepository {
 
     /**
      * Add new item to cart
-     * @param {string} sessionId - User session ID
+     * @param {string} userId - User ID
      * @param {Object} cartItem - Cart item object
      */
-    async addNewItemToCart(sessionId, cartItem) {
+    async addNewItemToCart(userId, cartItem) {
         const client = await getRedisClient();
-        const userKey = `users:${sessionId}`;
+        const userKey = `users:${userId}`;
 
-        // Check if cart exists in user data, initialize if needed
-        const cartData = await client.json.get(userKey, { path: '$.cart' });
+        // Check if user document exists
+        const userExists = await client.exists(userKey);
 
-        if (!cartData || cartData.length === 0 || !cartData[0].items) {
-            // Initialize cart within existing user document
-            await client.json.set(userKey, '$.cart', {
-                items: [cartItem],
+        if (!userExists) {
+            // Create user document with cart at root level
+            await client.json.set(userKey, '$', {
+                userId: userId,
+                cart: {
+                    items: [cartItem],
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                },
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString()
             });
         } else {
-            await client.json.arrAppend(userKey, '$.cart.items', cartItem);
-            await client.json.set(userKey, '$.cart.updatedAt', new Date().toISOString());
+            // Check if cart exists in user data
+            const cartData = await client.json.get(userKey, { path: '$.cart' });
+
+            if (!cartData || cartData.length === 0 || !cartData[0] || !cartData[0].items) {
+                // Initialize cart within existing user document
+                await client.json.set(userKey, '$.cart', {
+                    items: [cartItem],
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                });
+            } else {
+                // Add to existing cart
+                await client.json.arrAppend(userKey, '$.cart.items', cartItem);
+                await client.json.set(userKey, '$.cart.updatedAt', new Date().toISOString());
+            }
         }
 
         // Set expiration (24 hours)
@@ -69,11 +87,11 @@ export default class CartRepository {
 
     /**
      * Get raw cart data from storage
-     * @param {string} sessionId - User session ID
+     * @param {string} userId - User ID
      */
-    async getCartData(sessionId) {
+    async getCartData(userId) {
         const client = await getRedisClient();
-        const userKey = `users:${sessionId}`;
+        const userKey = `users:${userId}`;
         const cartData = await client.json.get(userKey, { path: '$.cart' });
 
         if (!cartData || cartData.length === 0 || !cartData[0]) {
@@ -85,12 +103,12 @@ export default class CartRepository {
 
     /**
      * Remove product from cart
-     * @param {string} sessionId - User session ID
+     * @param {string} userId - User ID
      * @param {string} productId - Product ID to remove
      */
-    async removeFromCart(sessionId, productId) {
+    async removeFromCart(userId, productId) {
         const client = await getRedisClient();
-        const userKey = `users:${sessionId}`;
+        const userKey = `users:${userId}`;
 
         // Get current cart
         const cartData = await client.json.get(userKey, { path: '$.cart' });
@@ -129,11 +147,11 @@ export default class CartRepository {
 
     /**
      * Clear entire cart
-     * @param {string} sessionId - User session ID
+     * @param {string} userId - User ID
      */
-    async clearCart(sessionId) {
+    async clearCart(userId) {
         const client = await getRedisClient();
-        const userKey = `users:${sessionId}`;
+        const userKey = `users:${userId}`;
 
         const cartData = await client.json.get(userKey, { path: '$.cart' });
 

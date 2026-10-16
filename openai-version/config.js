@@ -14,6 +14,14 @@ const CONFIG = {
     langcacheApiKey: process.env.LANGCACHE_API_KEY,
     langcacheCacheId: process.env.LANGCACHE_CACHE_ID,
     langcacheApiBaseUrl: process.env.LANGCACHE_API_BASE_URL,
+
+    // Redis Agent Memory Configuration (@redis-iris/agent-memory)
+    agentMemoryUrl: process.env.AGENT_MEMORY_URL,
+    agentMemoryStoreId: process.env.AGENT_MEMORY_STORE_ID,
+    agentMemoryApiKey: process.env.AGENT_MEMORY_API_KEY,
+    // Optional: ID of a namespace resource to scope sessions / long-term memories
+    agentMemoryNamespaceId: process.env.AGENT_MEMORY_NAMESPACE_ID,
+
     appName: process.env.APP_NAME,
 };
 

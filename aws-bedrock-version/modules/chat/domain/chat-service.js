@@ -37,20 +37,12 @@ export async function checkSemanticCache(query, sessionId) {
 }
 
 /**
- * End user session and clear chat data
- * @param {string} sessionId - User session ID
- */
-export async function endUserSession(sessionId) {
-    return chatRepository.deleteChats(sessionId);
-}
-
-/**
  * Get reply from Shopping AI agent
- * @param {string} sessionId - User session ID
- * @param {string} chatId - Chat ID
+ * @param {string} userId - User ID (the shopper, stable across sessions)
+ * @param {string} sessionId - Session ID (one conversation)
  * @param {string} message - User message
- * @param {boolean} useSmartRecall - Whether to use smart recall caching
+ * @param {boolean} lookupSimilarResponses - Whether to look up similar earlier responses in the semantic cache (saving to it always happens)
  */
-export async function processShoppingInquiry(sessionId, chatId, message, useSmartRecall) {
-    return runShoppingAgentWorkflow(sessionId, chatId, message, useSmartRecall);
+export async function processShoppingInquiry(userId, sessionId, message, lookupSimilarResponses) {
+    return runShoppingAgentWorkflow(userId, sessionId, message, lookupSimilarResponses);
 }

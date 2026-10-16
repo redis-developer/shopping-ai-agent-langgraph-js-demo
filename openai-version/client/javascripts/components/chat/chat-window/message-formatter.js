@@ -18,7 +18,7 @@ export class MessageFormatter {
                             🛒
                         </button>
                         <a href="/products/${productId}" class="product-link" title="View Details" target="_blank">
-                            👁️
+                            🔗
                         </a>
                     </span>
                 `;

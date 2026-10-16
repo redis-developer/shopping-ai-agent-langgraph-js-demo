@@ -1,5 +1,5 @@
 import CONFIG from '#config';
-import { getRedisClient } from '../../db/redis-client.js';
+import { getRedisClient } from '#modules/db/redis-client.js';
 
 export default class ProductRepository {
 
@@ -10,40 +10,53 @@ export default class ProductRepository {
      * @param {number} threshold - Similarity threshold (0-1, default: 0.7)
      */
     async vectorSearchProducts(searchVector, limit = 10, threshold = 0.5) {
-        const client = await getRedisClient();
-        // Convert embedding to bytes for Redis
-        const vectorBytes = Buffer.from(new Float32Array(searchVector).buffer);
+        try {
+            const client = await getRedisClient();
 
-        // Use Redis Vector Search with FT.SEARCH
-        const searchQuery = `*=>[KNN ${limit} @embedding $vector AS score]`;
+            // Convert embedding to bytes for Redis
+            const vectorBytes = Buffer.from(new Float32Array(searchVector).buffer);
 
-        const results = await client.ft.search('idx:products', searchQuery, {
-            PARAMS: {
-                vector: vectorBytes
-            },
-            RETURN: ['id', 'name', 'brand', 'category', 'price', 'salePrice', 'marketPrice', 'rating', 'score', 'isOnSale'],
-            DIALECT: 2,
-            LIMIT: { from: 0, size: limit }
-        });
+            console.log(`🔍 Vector search - embedding size: ${searchVector.length}, bytes: ${vectorBytes.length}`);
 
-        const products = [];
-        for (const doc of results.documents) {
-            const similarity = 1 - parseFloat(doc.value.score);
-            const productId = doc.id.replace('products:', '');
-            products.push({
-                id: productId,
-                name: doc.value.name,
-                brand: doc.value.brand || 'Generic',
-                category: doc.value.category,
-                salePrice: parseFloat(doc.value.salePrice) || 0,
-                marketPrice: parseFloat(doc.value.marketPrice) || 0,
-                isOnSale: doc.value.isOnSale,
-                rating: parseFloat(doc.value.rating) || 0,
-                semanticScore: similarity
+            // Use Redis Vector Search with FT.SEARCH
+            const searchQuery = `*=>[KNN ${limit} @embedding $vector AS score]`;
+
+            console.log(`🔍 Executing: FT.SEARCH idx:products "${searchQuery}"`);
+
+            const results = await client.ft.search('idx:products', searchQuery, {
+                PARAMS: {
+                    vector: vectorBytes
+                },
+                RETURN: ['id', 'name', 'brand', 'category', 'price', 'salePrice', 'marketPrice', 'rating', 'score', 'isOnSale'],
+                DIALECT: 2,
+                LIMIT: { from: 0, size: limit }
             });
+
+            console.log(`📊 Vector search returned ${results.total} results`);
+
+            const products = [];
+            for (const doc of results.documents) {
+                const similarity = 1 - parseFloat(doc.value.score);
+                const productId = doc.id.replace('products:', '');
+                products.push({
+                    id: productId,
+                    name: doc.value.name,
+                    brand: doc.value.brand || 'Generic',
+                    category: doc.value.category,
+                    salePrice: parseFloat(doc.value.salePrice) || 0,
+                    marketPrice: parseFloat(doc.value.marketPrice) || 0,
+                    isOnSale: doc.value.isOnSale,
+                    rating: parseFloat(doc.value.rating) || 0,
+                    semanticScore: similarity
+                });
+            }
+            console.log(`Found ${products.length} products`);
+            return products;
+        } catch (error) {
+            console.error('❌ Vector search error:', error.message);
+            console.error('Error stack:', error.stack);
+            return [];
         }
-        console.log(`Found ${products.length} products`);
-        return products;
     }
 
     /**

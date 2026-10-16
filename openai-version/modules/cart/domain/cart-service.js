@@ -6,11 +6,11 @@ const productRepository = new ProductRepository();
 
 /**
  * Add multiple items to cart
- * @param {string} sessionId - User session ID
+ * @param {string} userId - User ID
  * @param {Array<string>} productIds - Array of product IDs
  * @param {Array<number>} quantities - Array of quantities
  */
-export async function addItemsToCart(sessionId, productIds, quantities) {
+export async function addItemsToCart(userId, productIds, quantities) {
     const addedItems = [];
     let totalAdded = 0;
 
@@ -18,7 +18,7 @@ export async function addItemsToCart(sessionId, productIds, quantities) {
         const productId = productIds[i];
         const quantity = quantities[i] || 1;
 
-        const result = await addItemToCart(sessionId, productId, quantity);
+        const result = await addItemToCart(userId, productId, quantity);
 
         if (result.success) {
             addedItems.push(result.addedItem);
@@ -33,7 +33,7 @@ export async function addItemsToCart(sessionId, productIds, quantities) {
         };
     }
 
-    const cart = await getCart(sessionId);
+    const cart = await getCart(userId);
 
     return {
         success: true,
@@ -46,11 +46,11 @@ export async function addItemsToCart(sessionId, productIds, quantities) {
 
 /**
  * Add single item to cart
- * @param {string} sessionId - User session ID
+ * @param {string} userId - User ID
  * @param {string} productId - Product ID
  * @param {number} quantity - Quantity to add
  */
-export async function addItemToCart(sessionId, productId, quantity = 1) {
+export async function addItemToCart(userId, productId, quantity = 1) {
     // Get and validate product
     const product = await productRepository.getProductById(productId);
 
@@ -62,12 +62,12 @@ export async function addItemToCart(sessionId, productId, quantity = 1) {
     }
 
     // Check if item already exists in cart
-    const existingItem = await cartRepository.checkItemExistsInCart(sessionId, productId);
+    const existingItem = await cartRepository.checkItemExistsInCart(userId, productId);
 
     let result;
     if (existingItem) {
         // Update existing item quantity
-        result = await cartRepository.updateItemQuantity(sessionId, productId, existingItem.quantity + quantity);
+        result = await cartRepository.updateItemQuantity(userId, productId, existingItem.quantity + quantity);
     } else {
         // Add new item to cart
         const cartItem = {
@@ -79,7 +79,7 @@ export async function addItemToCart(sessionId, productId, quantity = 1) {
             quantity: quantity,
             addedAt: new Date().toISOString()
         };
-        result = await cartRepository.addNewItemToCart(sessionId, cartItem);
+        result = await cartRepository.addNewItemToCart(userId, cartItem);
     }
 
     if (!result.success) {
@@ -87,7 +87,7 @@ export async function addItemToCart(sessionId, productId, quantity = 1) {
     }
 
     // Get updated cart summary
-    const cart = await getCart(sessionId);
+    const cart = await getCart(userId);
 
     return {
         success: true,
@@ -104,16 +104,16 @@ export async function addItemToCart(sessionId, productId, quantity = 1) {
 
 /**
  * Get cart contents with business logic calculations
- * @param {string} sessionId - User session ID
+ * @param {string} userId - User ID
  */
-export async function getCart(sessionId) {
-    const cartData = await cartRepository.getCartData(sessionId);
+export async function getCart(userId) {
+    const cartData = await cartRepository.getCartData(userId);
 
     // If no cart data, return empty cart
     if (!cartData) {
         return {
             success: true,
-            sessionId: sessionId,
+            userId: userId,
             items: [],
             summary: {
                 totalItems: 0,
@@ -133,7 +133,7 @@ export async function getCart(sessionId) {
 
     return {
         success: true,
-        sessionId: sessionId,
+        userId: userId,
         items: items,
         summary: {
             totalItems: totalItems,
@@ -147,15 +147,15 @@ export async function getCart(sessionId) {
 
 /**
  * Remove item from cart
- * @param {string} sessionId - User session ID
+ * @param {string} userId - User ID
  * @param {string} productId - Product ID to remove
  */
-export async function removeItemFromCart(sessionId, productId) {
-    const result = await cartRepository.removeFromCart(sessionId, productId);
+export async function removeItemFromCart(userId, productId) {
+    const result = await cartRepository.removeFromCart(userId, productId);
 
     if (result.success) {
         // Get updated cart summary
-        const cartSummary = await getCart(sessionId);
+        const cartSummary = await getCart(userId);
 
         return {
             ...result,
@@ -168,8 +168,8 @@ export async function removeItemFromCart(sessionId, productId) {
 
 /**
  * Clear entire cart
- * @param {string} sessionId - User session ID
+ * @param {string} userId - User ID
  */
-export async function clearCart(sessionId) {
-    return cartRepository.clearCart(sessionId);
+export async function clearCart(userId) {
+    return cartRepository.clearCart(userId);
 }

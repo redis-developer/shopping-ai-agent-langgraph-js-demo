@@ -18,21 +18,20 @@
     "debug-config": "node scripts/debug-config.js"
   },
   "dependencies": {
-    "@aws-sdk/client-bedrock-runtime": "^3.896.0",
-    "@langchain/aws": "^0.1.15",
-    "@langchain/core": "^0.3.72",
-    "@langchain/langgraph": "^0.4.6",
-
-    "@redis-ai/langcache": "^0.10.1",
+    "@aws-sdk/client-bedrock-runtime": "^3.1152.0",
+    "@langchain/aws": "^1.4.7",
+    "@langchain/core": "^1.2.18",
+    "@langchain/langgraph": "^1.5.0",
+    "@redis-ai/langcache": "^0.12.1",
+    "@redis-iris/agent-memory": "^0.3.1",
     "cookie-parser": "~1.4.7",
-    "csv-parse": "^6.1.0",
-    "dotenv": "16.4.5",
-    "express": "~5.1.0",
-    "express-handlebars": "^8.0.3",
-    "hbs": "~4.2.0",
-    "langsmith": "^0.3.67",
-    "morgan": "~1.10.0",
-
-    "redis": "^5.5.6"
+    "csv-parse": "^7.0.3",
+    "dotenv": "18.0.8",
+    "express": "~5.3.0",
+    "express-handlebars": "^9.0.2",
+    "hbs": "~4.3.1",
+    "langsmith": "^0.11.0",
+    "morgan": "~1.12.1",
+    "redis": "^6.3.0"
   }
 }

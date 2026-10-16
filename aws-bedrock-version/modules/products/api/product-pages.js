@@ -20,7 +20,7 @@ router.get('/:productId', async function(req, res, next) {
 		}
 
 		res.render('product', { 
-			app_name: CONFIG.appName || 'Redish',
+			appName: CONFIG.appName || 'Redish',
 			product: product
 		});
 	} catch (error) {

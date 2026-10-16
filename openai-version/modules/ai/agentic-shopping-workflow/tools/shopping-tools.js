@@ -1,48 +1,39 @@
 import { tool } from "@langchain/core/tools";
 import { HumanMessage } from "@langchain/core/messages";
-import { ChatBedrockConverse } from "@langchain/aws";
+import { ChatOpenAI } from "@langchain/openai";
 
 import { z } from "zod";
 
 // Import service functions
 import { findProductsForIngredients, searchProducts } from '#modules/products/domain/product-service.js';
 import { addItemsToCart, getCart, clearCart } from '#modules/cart/domain/cart-service.js';
-
-// Import helper functions
-import { AppError, ErrorType } from '#lib/errors.js';
 import CONFIG from '#config';
+
+const recipeIngredientsSchema = z.object({
+    recipe: z.string().describe("recipe name"),
+    ingredients: z.array(z.object({
+        name: z.string().describe("simple ingredient name"),
+        quantity: z.string().describe("amount"),
+        essential: z.boolean()
+    }))
+});
 
 /**
  * Extract ingredients from LLM for a recipe
  * @param {string} recipe - Recipe name
- * @returns {Promise<Object>} Parsed ingredients data
+ * @returns {Promise<z.infer<typeof recipeIngredientsSchema>>} Ingredients for the recipe
  */
 async function getIngredientsFromLLM(recipe) {
 
-    const model = new ChatBedrockConverse({
-        model: CONFIG.bedrockModelId,
-        region: CONFIG.awsRegion,
-        credentials: {
-            accessKeyId: CONFIG.awsAccessKeyId,
-            secretAccessKey: CONFIG.awsSecretAccessKey
-        },
+    const model = new ChatOpenAI({
         temperature: 0.1, // Lower temperature for more consistent parsing
+        model: "gpt-4o-mini", // Faster, cheaper model for simple tasks
+        apiKey: CONFIG.openAiApiKey,
         maxTokens: 500, // Limit response size for faster processing
-        guardrails: {
-            guardrailIdentifier: CONFIG.bedrockConversationGuardrailId,
-            guardrailVersion: CONFIG.bedrockGuardrailVersion
-        }
+        timeout: 10000 // 10 second timeout built into the model
     });
 
-    const systemPrompt = `Extract essential ingredients for this recipe. Return ONLY valid JSON:
-
-{
-  "recipe": "recipe name",
-  "ingredients": [
-    { "name": "simple ingredient name", "quantity": "amount", "essential": true },
-    ...
-  ]
-}
+    const systemPrompt = `Extract essential ingredients for this recipe.
 
 Rules:
 - Max 6 ingredients marked essential: true
@@ -50,49 +41,24 @@ Rules:
 - Skip salt, water, oil unless special
 - Be concise and fast`;
 
-    const response = await model.invoke([
+    // Structured output: the model returns an object matching the schema, so no JSON parsing is needed
+    return model.withStructuredOutput(recipeIngredientsSchema).invoke([
         { role: "system", content: systemPrompt },
         new HumanMessage(`Ingredients for ${recipe}`)
     ]);
-
-    // Parse the LLM response to get ingredients
-    try {
-        return JSON.parse(response.content);
-    } catch (parseError) {
-        throw new AppError(
-            `ai.${ErrorType.INVALID_INPUT}`,
-            'Could not parse recipe ingredients from LLM response',
-            ErrorType.INVALID_INPUT,
-            {
-                publicMessage: 'Could not parse recipe ingredients. Please try rephrasing your recipe request.',
-                data: { parseError: parseError.message }
-            }
-        );
-    }
 }
 
 /**
- * Tool: Fast Recipe Ingredients
- * Quickly provides ingredient list with ONE suggested product per ingredient
+ * Tool: Recipe Ingredient Products
+ * Provides the ingredient list for a recipe with ONE suggested product per ingredient
  */
-export const fastRecipeIngredientsTool = tool(
+export const recipeIngredientProductsTool = tool(
     async ({ recipe }) => {
-        console.log(`🍳 Fast recipe ingredients for: "${recipe}"`);
+        console.log(`🍳 Recipe ingredient products for: "${recipe}"`);
 
         try {
             // First extract ingredients from LLM
             const ingredientsData = await getIngredientsFromLLM(recipe);
-
-            if (!ingredientsData.ingredients) {
-                throw new AppError(
-                    `ai.${ErrorType.INVALID_INPUT}`,
-                    'No ingredients received from LLM',
-                    ErrorType.INVALID_INPUT,
-                    {
-                        publicMessage: 'Could not extract ingredients from the recipe. Please try rephrasing your request.'
-                    }
-                );
-            }
 
             // Get essential ingredient names only
             const essentialIngredients = ingredientsData.ingredients.filter(ing => ing.essential).slice(0, 6);
@@ -115,25 +81,25 @@ export const fastRecipeIngredientsTool = tool(
                 console.log(`- ${item.ingredient} (Quantity: ${item.quantity})`);
             });
 
-            return JSON.stringify({
+            return {
                 success: true,
                 recipe: ingredientsData.recipe || recipe,
                 totalIngredients: result.totalIngredients,
                 ingredientProducts: enrichedProducts,
                 message: result.message
-            });
+            };
 
         } catch (error) {
             console.error('Error in fast recipe ingredients:', error);
-            return JSON.stringify({
+            return {
                 success: false,
                 error: `Sorry, I had trouble getting ingredients for "${recipe}". Please try rephrasing.`
-            });
+            };
         }
     },
     {
-        name: "fast_recipe_ingredients",
-        description: "Quickly get recipe ingredients with ONE suggested product per ingredient. Use for recipe/ingredient questions to provide fast responses.",
+        name: "find_recipe_ingredient_products",
+        description: "Get the ingredients for a recipe, with ONE suggested catalog product per ingredient. Use this first for recipe/ingredient questions, such as \"ingredients for butter chicken\" or \"what do I need to make [dish]\". Much faster than searching for each ingredient separately.",
         schema: z.object({
             recipe: z.string().describe("The recipe or dish name to get ingredients for")
         })
@@ -150,18 +116,10 @@ export const directAnswerTool = tool(
 
         try {
             // Direct LLM call for general questions
-            const model = new ChatBedrockConverse({
-                model: CONFIG.bedrockModelId,
-                region: CONFIG.awsRegion,
-                credentials: {
-                    accessKeyId: CONFIG.awsAccessKeyId,
-                    secretAccessKey: CONFIG.awsSecretAccessKey
-                },
+            const model = new ChatOpenAI({
                 temperature: 0.2,
-                guardrails: {
-                    guardrailIdentifier: CONFIG.bedrockConversationGuardrailId,
-                    guardrailVersion: CONFIG.bedrockGuardrailVersion
-                }
+                model: CONFIG.modelName,
+                apiKey: CONFIG.openAiApiKey
             });
 
             const systemPrompt = `You are a knowledgeable grocery shopping and cooking assistant. Answer questions about:
@@ -180,24 +138,24 @@ Do not mention specific product prices or brands - focus on general knowledge an
                 new HumanMessage(question)
             ]);
 
-            return JSON.stringify({
+            return {
                 success: true,
                 content: response.content,
                 question: question
-            });
+            };
 
         } catch (error) {
             console.error('Error in direct answer:', error);
-            return JSON.stringify({
+            return {
                 success: false,
                 error: `Sorry, I had trouble answering your question about "${question}". Please try rephrasing.`,
                 question: question
-            });
+            };
         }
     },
     {
         name: "direct_answer",
-        description: "Answer general grocery, cooking, and food-related questions using knowledge. Use for cooking tips, food storage, nutrition info, etc.",
+        description: "Answer general grocery, cooking, and food-related questions using knowledge. Use for cooking tips, techniques, food storage, preparation methods, and nutrition info. Not for recipe ingredient lists.",
         schema: z.object({
             question: z.string().describe("The grocery/cooking question to answer")
         })
@@ -236,12 +194,12 @@ export const searchProductsTool = tool(
             }
 
             if (result.products.length === 0) {
-                return JSON.stringify({
+                return {
                     success: false,
                     message: `No products found for "${query}". Try different keywords or check the spelling.`,
                     query: query,
                     products: []
-                });
+                };
             }
 
             const response = {
@@ -250,21 +208,21 @@ export const searchProductsTool = tool(
                 ...result
             };
 
-            return JSON.stringify(response);
+            return response;
 
         } catch (error) {
             console.error('Error searching products:', error);
-            return JSON.stringify({
+            return {
                 success: false,
                 error: `Sorry, I had trouble searching for "${query}". Please try again.`,
                 query: query,
                 products: []
-            });
+            };
         }
     },
     {
         name: "search_products",
-        description: "Search for specific products in the database. Use when user wants to find actual products to buy or explore more options.",
+        description: "Search for specific products in the database. Use when the user wants to find or browse actual products to buy, or asks for more options or more brands, including after recipe ingredients.",
         schema: z.object({
             query: z.string().describe("Product search query"),
             category: z.string().optional().describe("Product category filter"),
@@ -281,31 +239,31 @@ export const searchProductsTool = tool(
  * Adds products to user's cart
  */
 export const addToCartTool = tool(
-    async ({ sessionId, productIds, quantities }) => {
+    async ({ productIds, quantities }, config) => {
+        const userId = config?.configurable?.userId;
         console.log(`🛒 Adding to cart: ${productIds.join(", ")}`);
 
         try {
-            const result = await addItemsToCart(sessionId, productIds, quantities);
+            const result = await addItemsToCart(userId, productIds, quantities);
 
-            return JSON.stringify({
+            return {
                 operation: "add",
                 ...result
-            });
+            };
 
         } catch (error) {
             console.error('Error adding to cart:', error);
-            return JSON.stringify({
+            return {
                 operation: "add",
                 success: false,
                 error: "Failed to add items to cart. Please try again."
-            });
+            };
         }
     },
     {
         name: "add_to_cart",
         description: "Add products to user's shopping cart by product IDs.",
         schema: z.object({
-            sessionId: z.string().describe("User session ID"),
             productIds: z.array(z.string()).describe("Array of product IDs to add"),
             quantities: z.array(z.number()).describe("Array of quantities for each product (default: 1 each)")
         })
@@ -317,13 +275,14 @@ export const addToCartTool = tool(
  * Shows current cart contents
  */
 export const viewCartTool = tool(
-    async ({ sessionId }) => {
-        console.log(`Viewing cart for session: ${sessionId}`);
+    async (_args, config) => {
+        const userId = config?.configurable?.userId;
+        console.log(`Viewing cart for user: ${userId}`);
 
         try {
-            const cart = await getCart(sessionId);
+            const cart = await getCart(userId);
 
-            return JSON.stringify({
+            return {
                 operation: "view",
                 success: cart.success,
                 items: cart.items || [],
@@ -331,23 +290,21 @@ export const viewCartTool = tool(
                 message: cart.items && cart.items.length > 0
                     ? `You have ${cart.summary.totalItems} item(s) in your cart`
                     : "Your cart is empty"
-            });
+            };
 
         } catch (error) {
             console.error('Error viewing cart:', error);
-            return JSON.stringify({
+            return {
                 operation: "view",
                 success: false,
                 error: "Failed to get cart contents"
-            });
+            };
         }
     },
     {
         name: "view_cart",
         description: "View current contents of user's shopping cart.",
-        schema: z.object({
-            sessionId: z.string().describe("User session ID")
-        })
+        schema: z.object({})
     }
 );
 
@@ -356,39 +313,38 @@ export const viewCartTool = tool(
  * Empties the user's cart
  */
 export const clearCartTool = tool(
-    async ({ sessionId }) => {
-        console.log(`🗑️ Clearing cart for session: ${sessionId}`);
+    async (_args, config) => {
+        const userId = config?.configurable?.userId;
+        console.log(`🗑️ Clearing cart for user: ${userId}`);
 
         try {
-            const result = await clearCart(sessionId);
+            const result = await clearCart(userId);
 
-            return JSON.stringify({
+            return {
                 operation: "clear",
                 success: result.success,
                 itemsCleared: result.itemsCleared || 0,
                 message: result.message || "Cart cleared successfully"
-            });
+            };
 
         } catch (error) {
             console.error('Error clearing cart:', error);
-            return JSON.stringify({
+            return {
                 operation: "clear",
                 success: false,
                 error: "Failed to clear cart"
-            });
+            };
         }
     },
     {
         name: "clear_cart",
         description: "Clear all items from user's shopping cart.",
-        schema: z.object({
-            sessionId: z.string().describe("User session ID")
-        })
+        schema: z.object({})
     }
 );
 
-export const groceryTools = [
-    fastRecipeIngredientsTool,
+export const shoppingTools = [
+    recipeIngredientProductsTool,
     searchProductsTool,
     addToCartTool,
     viewCartTool,

@@ -13,6 +13,7 @@ This version demonstrates building shopping AI agents using OpenAI's GPT-4 for c
 - **[Node.js (v24+)](https://nodejs.org/)** + **Express** - Backend runtime and API framework
 - **[Redis](https://redis.io)** - Product store, conversational history, and semantic caching
 - **[Redis LangCache API](https://redis.io/langcache/)** - Semantic caching for LLM responses
+- **[Redis Agent Memory](https://redis.io/docs/latest/develop/ai/context-engine/agent-memory/)** - Session memory and long-term memory for the shopping agent (`@redis-iris/agent-memory`)
 - **LangGraph** - AI workflow orchestration
 - **[OpenAI API](https://platform.openai.com/account/api-keys)** - GPT-4 for intelligent responses + embeddings
 - **HTML + CSS + Vanilla JS** - Frontend UI
@@ -34,6 +35,12 @@ REDIS_URL=your_redis_connection_string
 LANGCACHE_API_KEY="your_langcache_api_key"
 LANGCACHE_API_BASE_URL="your_langcache_api_base_url"
 LANGCACHE_CACHE_ID="your_langcache_cache_id"
+
+# Redis Agent Memory (@redis-iris/agent-memory)
+AGENT_MEMORY_URL="your_agent_memory_url"
+AGENT_MEMORY_STORE_ID="your_store_id"
+AGENT_MEMORY_API_KEY="your_agent_memory_api_key"
+#AGENT_MEMORY_NAMESPACE_ID="your_namespace_id"  # Optional: scope memories to a namespace
 
 MODEL_NAME="gpt-4o-mini"
 

@@ -1,4 +1,4 @@
-import { addToCart } from '@services/cartService.js';
+import { addToCart } from '@services/cart-service.js';
 
 export class CartButton {
     constructor(onSuccess = null, onError = null) {
@@ -6,10 +6,10 @@ export class CartButton {
         this.onError = onError;
     }
 
-    async addToCartFromChat(sessionId, productId, buttonElement) {
+    async addToCartFromChat(userId, productId, buttonElement) {
         const originalContent = buttonElement.innerHTML;
 
-        await addToCart(sessionId, productId, 1, {
+        await addToCart(userId, productId, 1, {
             onLoad: () => {
                 buttonElement.innerHTML = '⏳';
                 buttonElement.disabled = true;

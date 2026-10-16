@@ -1,5 +1,5 @@
-import { SessionService } from '@services/sessionService.js';
-import { addToCart } from '@services/cartService.js';
+import { SessionService } from '@services/session-service.js';
+import { addToCart } from '@services/cart-service.js';
 
 import { CartCount } from '@components/cart/cart-count.js';
 import { CartButton } from '@components/cart/cart-button.js';
@@ -20,7 +20,7 @@ export class ProductApp {
     init() {
         // Initialize session
         const session = this.sessionService.initialize();
-        this.sessionId = session.sessionId;
+        this.userId = session.userId;
 
         // Initialize components
         this.cartCount = new CartCount('.cart-count');
@@ -68,7 +68,7 @@ export class ProductApp {
 
     async loadInitialData() {
         // Load cart count
-        await this.cartCount.load(this.sessionId);
+        await this.cartCount.load(this.userId);
 
         // Load related products
         if (this.productCategory) {
@@ -88,7 +88,7 @@ export class ProductApp {
         addBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ADDING...';
 
         try {
-            await addToCart(this.sessionId, this.productId, quantity, {
+            await addToCart(this.userId, this.productId, quantity, {
                 onSuccess: (result) => {
                     addBtn.innerHTML = '✅ ADDED';
                     this.handleCartSuccess(result);

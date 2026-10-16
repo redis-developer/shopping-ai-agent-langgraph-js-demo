@@ -2,7 +2,7 @@ import { SCHEMA_FIELD_TYPE, SCHEMA_VECTOR_FIELD_ALGORITHM } from 'redis';
 import { readFileSync } from 'fs';
 import { parse } from 'csv-parse/sync';
 import CONFIG from '#config';
-import { getRedisClient } from '../../db/redis-client.js';
+import { getRedisClient } from '#modules/db/redis-client.js';
 import { generateEmbeddings } from '#modules/ai/helpers/embeddings.js';
 
 /**
@@ -63,7 +63,7 @@ async function createProductIndex(dropExisting = false) {
             AS: 'embedding',
             ALGORITHM: SCHEMA_VECTOR_FIELD_ALGORITHM.HNSW,
             DISTANCE_METRIC: 'L2',
-            DIM: 1024, // AWS Titan Text Embeddings V2 dimension
+            DIM: 1024, // AWS Titan Text Embeddings V2 dimension (default 1024)
         }
     }, {
         ON: 'JSON',

@@ -1,19 +1,13 @@
-import { SessionService } from '@services/sessionService.js';
+import { SessionService } from '@services/session-service.js';
 
 export class SessionManager {
-    constructor(onSessionEnd = null, onNewChat = null) {
+    constructor(onNewChat = null) {
         this.sessionService = new SessionService();
-        this.onSessionEnd = onSessionEnd;
         this.onNewChat = onNewChat;
         this.init();
     }
 
     init() {
-        const endSessionBtn = document.getElementById('end-session');
-        if (endSessionBtn) {
-            endSessionBtn.addEventListener('click', () => this.endSession());
-        }
-
         const newChatBtn = document.getElementById('new-chat');
         if (newChatBtn) {
             newChatBtn.addEventListener('click', () => this.createNewChat());
@@ -22,19 +16,6 @@ export class SessionManager {
 
     initializeSession() {
         return this.sessionService.initialize();
-    }
-
-    async endSession() {
-        await this.sessionService.end(
-            (newSession) => {
-                if (this.onSessionEnd) {
-                    this.onSessionEnd(newSession);
-                }
-            },
-            (error) => {
-                console.error('Session end failed:', error);
-            }
-        );
     }
 
     createNewChat() {
@@ -47,7 +28,4 @@ export class SessionManager {
         return this.sessionService.getSessionId();
     }
 
-    getCurrentChatId() {
-        return this.sessionService.getCurrentChatId();
-    }
 }

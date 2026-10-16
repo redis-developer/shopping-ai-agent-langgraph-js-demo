@@ -1,38 +1,24 @@
 import { Router } from 'express';
-import { endUserSession, processShoppingInquiry } from '../domain/chat-service.js';
+import { processShoppingInquiry } from '../domain/chat-service.js';
 import { HttpStatusCode } from '#lib/errors.js';
 
 const router = Router();
 
 // POST /chat
 router.post('/', async function(req, res, next) {
-    const { message, sessionId, chatId, useSmartRecall } = req.body;
+    const { message, userId, sessionId, lookupSimilarResponses = true } = req.body;
 
-    if (!message || !sessionId) {
-        return res.status(HttpStatusCode.BAD_REQUEST).json({ error: 'Missing message or sessionId' });
+    if (!message || !userId || !sessionId) {
+        return res.status(HttpStatusCode.BAD_REQUEST).json({ error: 'Missing message, userId or sessionId' });
     }
 
     try {
-        const reply = await processShoppingInquiry(sessionId, chatId, message, useSmartRecall);
+        const reply = await processShoppingInquiry(userId, sessionId, message, lookupSimilarResponses);
         res.json({ 
             content: reply.content,
-            isCachedResponse: reply.isCachedResponse
+            isCachedResponse: reply.isCachedResponse,
+            usage: reply.usage
         });
-    } catch (error) {
-        next(error);
-    }
-});
-
-router.post('/end-session', async function(req, res, next) {
-    const { sessionId } = req.body;
-
-    if (!sessionId) {
-        return res.status(HttpStatusCode.BAD_REQUEST).json({ error: 'Missing sessionId' });
-    }
-
-    try {
-        const result = await endUserSession(sessionId);
-        res.json(result);
     } catch (error) {
         next(error);
     }

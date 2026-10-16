@@ -40,7 +40,7 @@ SERVER_PORT=3000
 BEDROCK_AWS_ACCESS_KEY_ID=your_aws_access_key_id
 BEDROCK_AWS_SECRET_ACCESS_KEY=your_aws_secret_access_key
 BEDROCK_AWS_REGION=us-east-1
-BEDROCK_MODEL_ID="anthropic.claude-3-5-sonnet-20241022-v2:0"
+BEDROCK_MODEL_ID="anthropic.claude-opus-4-7"
 
 # Bedrock Guardrails Configuration (optional - for content safety)
 BEDROCK_CONVERSATION_GUARDRAIL_ID=guardrail-id
@@ -54,6 +54,12 @@ REDIS_URL=your_redis_connection_string
 LANGCACHE_API_KEY="your_langcache_api_key"
 LANGCACHE_API_BASE_URL="your_langcache_api_base_url"
 LANGCACHE_CACHE_ID="your_langcache_cache_id"
+
+# Redis Agent Memory (@redis-iris/agent-memory)
+AGENT_MEMORY_URL="your_agent_memory_url"
+AGENT_MEMORY_STORE_ID="your_store_id"
+AGENT_MEMORY_API_KEY="your_agent_memory_api_key"
+#AGENT_MEMORY_NAMESPACE_ID="your_namespace_id"  # Optional: scope memories to a namespace
 
 # For tracing with Langsmith (optional)
 LANGSMITH_TRACING="true"

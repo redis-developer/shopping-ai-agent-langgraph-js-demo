@@ -1,4 +1,4 @@
-import { loadCartCount } from '@services/cartService.js';
+import { loadCartCount } from '@services/cart-service.js';
 
 export class CartCount {
     constructor(selector = '.cart-count') {
@@ -15,13 +15,13 @@ export class CartCount {
         }
     }
 
-    async load(sessionId) {
-        if (!sessionId) {
+    async load(userId) {
+        if (!userId) {
             console.log('No session ID yet, skipping cart count load');
             return;
         }
 
-        await loadCartCount(sessionId, {
+        await loadCartCount(userId, {
             onSuccess: (cart) => {
                 if (cart.success && cart.summary) {
                     this.update(cart.summary.totalItems);

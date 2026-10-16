@@ -2,6 +2,7 @@ import { createClient } from 'redis';
 import CONFIG from '#config';
 
 let client = null;
+let isConnectionLost = false;
 
 /**
  * Get or create Redis client singleton
@@ -16,8 +17,12 @@ export const getRedisClient = async () => {
         });
         
         // Event handlers
-        client.on('error', (err) => {
-            console.error('❌ Redis Client Error:', err);
+        client.on('error', (error) => {
+            // node-redis keeps retrying on its own, so log the outage once instead of on every retry
+            if (!isConnectionLost) {
+                isConnectionLost = true;
+                console.error(`❌ Redis connection lost (${error.code || error.message}), reconnecting automatically...`);
+            }
         });
         
         client.on('connect', () => {
@@ -28,12 +33,13 @@ export const getRedisClient = async () => {
             console.log('🔌 Redis Client disconnected');
         });
         
-        client.on('reconnecting', () => {
-            console.log('🔄 Redis Client reconnecting...');
-        });
-        
         client.on('ready', () => {
-            console.log('Redis Client ready');
+            if (isConnectionLost) {
+                isConnectionLost = false;
+                console.log('✅ Redis connection restored');
+            } else {
+                console.log('Redis Client ready');
+            }
         });
         
         try {
