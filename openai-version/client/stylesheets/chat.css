@@ -84,15 +84,6 @@ body {
     color: var(--primary);
 }
 
-.tagline {
-    font-family: 'Inter', sans-serif;
-    font-size: 0.9rem;
-    color: var(--text);
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-}
-
 .search-bar {
     display: flex;
     flex: 1;
@@ -387,82 +378,85 @@ body {
     transform: translate(2px, 2px);
 }
 
-/* Chat Assistant */
-.chat-assistant {
-    position: fixed;
-    bottom: 2rem;
-    right: 2rem;
-    z-index: 1000;
-}
-
-.chat-toggle {
-    background: var(--primary);
-    border: var(--border);
-    color: var(--white);
-    padding: 1rem 1.5rem;
-    font-family: 'Inter', sans-serif;
-    font-weight: 700;
-    font-size: 0.9rem;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    cursor: pointer;
-    box-shadow: var(--shadow);
-    transition: all 0.1s ease;
+/* Page layout: the canvas (page content) and the docked chat */
+body.chat-page {
+    height: 100vh;
     display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    position: relative;
+    flex-direction: column;
+    overflow: hidden;
 }
 
-.chat-toggle:hover {
-    background: var(--secondary);
-    box-shadow: var(--shadow-hover);
-    transform: translate(-2px, -2px);
+.app-layout {
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 432px;
 }
 
-.chat-toggle:active {
-    box-shadow: var(--shadow-active);
-    transform: translate(2px, 2px);
+/* The site header and the canvas share the left column, so the chat runs the full height of the page */
+.main-column {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    container-type: inline-size;
 }
 
-.chat-bubble {
+.canvas {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+}
+
+/* Product details page, shown in the canvas in place of the page sections */
+.product-view {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1rem 2rem;
+}
+
+.product-view[hidden] {
+    display: none;
+}
+
+.product-view-back {
+    align-self: flex-start;
     background: var(--white);
-    color: var(--dark);
-    padding: 0.75rem 1rem;
     border: var(--border);
-    position: absolute;
-    right: 100%;
-    margin-right: 1rem;
-    white-space: nowrap;
+    color: var(--dark);
+    padding: 0.5rem 1rem;
     font-family: 'Inter', sans-serif;
     font-weight: 700;
     font-size: 0.8rem;
     text-transform: uppercase;
     letter-spacing: 1px;
+    cursor: pointer;
     box-shadow: var(--shadow);
-    animation: bounce 2s infinite;
+    transition: all 0.1s ease;
 }
 
-@keyframes bounce {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-3px); }
+.product-view-back:hover {
+    box-shadow: var(--shadow-hover);
+    transform: translate(-2px, -2px);
 }
 
-.chat-window-container {
+.product-frame {
+    flex: 1;
+    width: 100%;
+    border: var(--border);
+    background: var(--white);
+}
+
+/* Chat Assistant (docked). It touches the top and left of the page; the margin on the right and bottom leaves room for its shadow */
+.chat-assistant {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    margin: 0 1rem 1rem 0;
     background: var(--white);
     border: var(--border);
-    width: 400px;
     box-shadow: var(--shadow-hover);
-    position: absolute;
-    bottom: 80px;
-    right: 0;
-    display: none;
-    flex-direction: column;
-    overflow: visible;
-}
-
-.chat-window-container.active {
-    display: flex;
 }
 
 /* Chat Header */
@@ -473,7 +467,6 @@ body {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    border-bottom: var(--border);
 }
 
 .assistant-info {
@@ -509,12 +502,6 @@ body {
     font-weight: 500;
     text-transform: uppercase;
     letter-spacing: 1px;
-}
-
-.chat-actions {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
 }
 
 .lookup-toggle-row {
@@ -575,27 +562,10 @@ body {
     display: none;
 }
 
-.minimize-chat {
-    background: var(--white);
-    border: var(--border);
-    color: var(--dark);
-    font-size: 0.9rem;
-    cursor: pointer;
-    padding: 0.5rem;
-    transition: all 0.1s ease;
-    box-shadow: var(--shadow);
-}
-
-.minimize-chat:hover {
-    background: var(--danger);
-    color: var(--white);
-    box-shadow: var(--shadow-hover);
-    transform: translate(-1px, -1px);
-}
-
 /* Chat Content */
 .chat-content {
     flex: 1;
+    min-height: 0;
     display: flex;
     flex-direction: column;
 }
@@ -604,8 +574,6 @@ body {
     flex: 1;
     padding: 1rem;
     overflow-y: auto;
-    min-height: 300px;
-    max-height: 400px;
     background: var(--light);
 }
 
@@ -753,6 +721,21 @@ body {
 }
 
 
+/* The header gets two rows when the left column is narrow (the chat takes the rest of the window) */
+@container (max-width: 900px) {
+    .header-container {
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .search-bar {
+        order: 3;
+        flex-basis: 100%;
+        max-width: none;
+        margin: 0;
+    }
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
     .header-container {
@@ -775,18 +758,25 @@ body {
         grid-template-columns: repeat(2, 1fr);
     }
     
-    .chat-window-container {
-        width: 350px;
-        height: 500px;
+    body.chat-page {
+        height: auto;
+        overflow: visible;
     }
-    
+
+    .app-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .canvas {
+        overflow: visible;
+    }
+
+    .product-frame {
+        min-height: 80vh;
+    }
+
     .chat-assistant {
-        bottom: 1rem;
-        right: 1rem;
-    }
-    
-    .chat-bubble {
-        display: none;
+        height: 80vh;
     }
 }
 
@@ -797,12 +787,6 @@ body {
     
     .products-grid {
         grid-template-columns: 1fr;
-    }
-    
-    .chat-window-container {
-        width: calc(100vw - 2rem);
-        height: 70vh;
-        right: 1rem;
     }
     
     .hero-features {
@@ -921,75 +905,6 @@ body {
     font-weight: 700;
 }
 
-.product-actions {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin-left: 0.5rem;
-    vertical-align: middle;
-}
-
-.product-id {
-    background: #e8f2ff;
-    color: #667eea;
-    padding: 0.2rem 0.4rem;
-    border-radius: 5px;
-    font-size: 0.8rem;
-    font-weight: 500;
-}
-
-.cart-icon-btn {
-    background: var(--accent);
-    border: var(--border);
-    color: var(--dark);
-    padding: 0.4rem 0.8rem;
-    cursor: pointer;
-    font-family: 'Inter', sans-serif;
-    font-size: 0.8rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    transition: all 0.1s ease;
-    box-shadow: 2px 2px 0px 0px var(--dark);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.cart-icon-btn:hover {
-    background: var(--primary);
-    box-shadow: 3px 3px 0px 0px var(--dark);
-    transform: translate(-1px, -1px);
-}
-
-.cart-icon-btn:disabled {
-    background: #999;
-    cursor: not-allowed;
-    transform: none;
-    box-shadow: 2px 2px 0px 0px var(--dark);
-}
-
-.product-link {
-    background: #667eea;
-    color: white;
-    padding: 0.3rem 0.5rem;
-    border-radius: 15px;
-    text-decoration: none;
-    font-size: 0.9rem;
-    transition: all 0.3s ease;
-    min-width: 30px;
-    height: 25px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.product-link:hover {
-    background: #764ba2;
-    transform: scale(1.1);
-    text-decoration: none;
-    color: white;
-}
-
 .typing-indicator .message-content {
     background: #f0f0f0;
     padding: 1rem;
@@ -1025,4 +940,69 @@ body {
         transform: translateY(-10px);
         opacity: 1;
     }
+}
+
+/* Assistant messages use the full width of the chat, so product cards have room */
+.message .assistant-content {
+    max-width: calc(100% - 52px);
+}
+
+/* Product cards inside an assistant message */
+.chat-product-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+}
+
+.chat-product-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    background: var(--white);
+    border: var(--border);
+    box-shadow: var(--shadow);
+    cursor: pointer;
+    transition: all 0.1s ease;
+}
+
+.chat-product-card:hover {
+    box-shadow: var(--shadow-hover);
+    transform: translate(-2px, -2px);
+}
+
+.chat-product-top,
+.chat-product-bottom {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.chat-product-bottom {
+    justify-content: space-between;
+}
+
+.chat-product-image {
+    font-size: 2rem;
+}
+
+.chat-product-name {
+    display: block;
+    color: var(--dark);
+    font-size: 0.85rem;
+    font-weight: 700;
+    line-height: 1.3;
+    text-decoration: none;
+}
+
+.chat-product-meta {
+    font-size: 0.8rem;
+    color: var(--text);
+}
+
+.chat-product-add {
+    width: auto;
+    padding: 0.4rem 0.75rem;
+    font-size: 0.75rem;
 }

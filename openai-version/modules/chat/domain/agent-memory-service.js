@@ -19,9 +19,10 @@ export async function getWorkingMemory(sessionId) {
  * @param {string} userId - User ID
  * @param {string} userMessage - What the user said
  * @param {string} assistantReply - What the assistant replied
+ * @param {Array} foundProducts - Products shown with the reply
  */
-export async function addConversationTurn(sessionId, userId, userMessage, assistantReply) {
-    return memoryRepository.addConversationTurn(sessionId, userId, userMessage, assistantReply);
+export async function addConversationTurn(sessionId, userId, userMessage, assistantReply, foundProducts) {
+    return memoryRepository.addConversationTurn(sessionId, userId, userMessage, assistantReply, foundProducts);
 }
 
 /**

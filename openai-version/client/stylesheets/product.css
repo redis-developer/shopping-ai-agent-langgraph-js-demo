@@ -60,6 +60,11 @@ legend {
     margin-bottom: 2rem;
 }
 
+/* Shown inside the home page: its own header is used instead */
+.embedded .header {
+    display: none;
+}
+
 .header-container {
     max-width: 1200px;
     margin: 0 auto;
@@ -518,80 +523,11 @@ legend {
     gap: 2rem;
 }
 
-/* Chat Message Product Actions (keeping existing functionality) */
 .product-actions {
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
     margin-left: 0.5rem;
-}
-
-.product-id {
-    background: var(--white);
-    color: var(--primary);
-    padding: 0.3rem 0.6rem;
-    border: 2px solid var(--dark);
-    font-family: 'Inter', sans-serif;
-    font-size: 0.8rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    box-shadow: 2px 2px 0px 0px var(--dark);
-}
-
-.cart-icon-btn {
-    background: var(--accent);
-    border: var(--border);
-    color: var(--dark);
-    padding: 0.4rem 0.8rem;
-    cursor: pointer;
-    font-family: 'Inter', sans-serif;
-    font-size: 0.8rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    transition: all 0.1s ease;
-    box-shadow: 2px 2px 0px 0px var(--dark);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.cart-icon-btn:hover {
-    background: var(--primary);
-    box-shadow: 3px 3px 0px 0px var(--dark);
-    transform: translate(-1px, -1px);
-}
-
-.cart-icon-btn:disabled {
-    background: #999;
-    cursor: not-allowed;
-    transform: none;
-    box-shadow: 2px 2px 0px 0px var(--dark);
-}
-
-.product-link {
-    background: var(--primary);
-    color: var(--white);
-    padding: 0.4rem 0.8rem;
-    border: var(--border);
-    text-decoration: none;
-    font-family: 'Inter', sans-serif;
-    font-size: 0.8rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    transition: all 0.1s ease;
-    box-shadow: 2px 2px 0px 0px var(--dark);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.product-link:hover {
-    background: var(--secondary);
-    color: var(--white);
-    text-decoration: none;
-    box-shadow: 3px 3px 0px 0px var(--dark);
-    transform: translate(-1px, -1px);
 }
 
 /* Responsive Design */

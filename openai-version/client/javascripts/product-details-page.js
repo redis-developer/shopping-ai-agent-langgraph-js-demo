@@ -115,6 +115,11 @@ export class ProductApp {
     handleCartSuccess(result) {
         NotificationSystem.success(`✅ ${result.message}`);
         this.cartCount.update(result.cartSummary.summary.totalItems);
+
+        // When shown inside the home page, keep its cart count in step
+        if (window.parent !== window) {
+            window.parent.postMessage({ type: 'cart-count', totalItems: result.cartSummary.summary.totalItems }, window.location.origin);
+        }
     }
 
     handleCartError(error) {
@@ -124,6 +129,11 @@ export class ProductApp {
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', () => {
+    // Inside the home page, its own header is shown instead of this page's
+    if (window.parent !== window) {
+        document.body.classList.add('embedded');
+    }
+
     // Extract product info from page
     const productId = document.querySelector('[data-product-id]')?.dataset.productId ||
                      new URLSearchParams(window.location.search).get('productId') ||

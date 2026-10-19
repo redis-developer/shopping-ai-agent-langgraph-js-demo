@@ -15,6 +15,7 @@ import { z } from "zod";
  * @property {boolean} [lookupSimilarResponses] - Whether to look up similar earlier responses in the semantic cache. New responses are always saved to it.
  * @property {string} [conversationSummary] - Service-generated summary of the earlier conversation in this session
  * @property {string[]} [longTermMemories] - Text of the long-term memories loaded for this turn
+ * @property {Array<{id: string, name: string, price: number, image: string, rating: number}>} [foundProducts] - Products the tools found this turn (or the cached reply came with), shown to the user as product cards
  */
 export const ShoppingAgentState = MessagesZodState.extend({
     userId: z.string(),
@@ -24,4 +25,11 @@ export const ShoppingAgentState = MessagesZodState.extend({
     lookupSimilarResponses: z.boolean().optional(),
     conversationSummary: z.string().optional(),
     longTermMemories: z.array(z.string()).optional(),
+    foundProducts: z.array(z.object({
+        id: z.string(),
+        name: z.string(),
+        price: z.number(),
+        image: z.string(),
+        rating: z.number(),
+    })).optional(),
 });

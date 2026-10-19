@@ -55,15 +55,8 @@
         <article class="product-detail">
             <figure class="product-image-section">
                 <div class="product-main-image">
-                    <!-- Fallback emoji based on category -->
-                    <span class="product-emoji">
-                        {{#if (eq product.category "Fruits & Vegetables")}}🥬{{/if}}
-                        {{#if (eq product.category "Bakery & Dairy")}}🥛{{/if}}
-                        {{#if (eq product.category "Meat & Seafood")}}🐟{{/if}}
-                        {{#if (eq product.category "Grains & Pulses")}}🌾{{/if}}
-                        {{#if (eq product.category "Snacks & Beverages")}}🍪{{/if}}
-                        {{#unless product.category}}🛒{{/unless}}
-                    </span>
+                    <!-- Emoji standing in for a product image -->
+                    <span class="product-emoji">{{productImage}}</span>
                 </div>
             </figure>
 
@@ -135,6 +128,26 @@
             <div id="related-products-grid" class="products-grid" role="list">
                 <!-- Related products will be loaded here -->
             </div>
+
+            <!-- Cards in the related products grid -->
+            <template id="related-product-template">
+                <div class="product-card" role="listitem">
+                    <div class="product-image">
+                        <span class="product-emoji"></span>
+                    </div>
+                    <div class="product-info">
+                        <h4></h4>
+                        <p class="product-price"></p>
+                        <a class="view-btn">VIEW PRODUCT</a>
+                    </div>
+                </div>
+            </template>
+
+            <template id="related-placeholder-template">
+                <div class="placeholder-message">
+                    <p>Related products feature coming soon!</p>
+                </div>
+            </template>
         </aside>
     </main>
 

@@ -1,3 +1,5 @@
+import { DOM_IDS } from '@utils/constants.js';
+
 export class TypingIndicator {
     constructor(messagesContainer) {
         this.messagesContainer = messagesContainer;
@@ -6,18 +8,7 @@ export class TypingIndicator {
     show() {
         if (!this.messagesContainer) return;
 
-        const typingDiv = document.createElement('div');
-        typingDiv.className = 'message typing-indicator';
-        typingDiv.innerHTML = `
-            <div class="assistant-avatar">🤖</div>
-            <div class="message-content typing-content">
-                <div class="typing-dots">
-                    <span></span><span></span><span></span>
-                </div>
-            </div>
-        `;
-
-        this.messagesContainer.appendChild(typingDiv);
+        this.messagesContainer.appendChild(document.getElementById(DOM_IDS.TYPING_INDICATOR_TEMPLATE).content.firstElementChild.cloneNode(true));
         this.messagesContainer.scrollTop = this.messagesContainer.scrollHeight;
     }
 

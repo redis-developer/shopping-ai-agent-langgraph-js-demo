@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getProductById } from '../domain/product-service.js';
+import { getProductById, getProductImage } from '../domain/product-service.js';
 import CONFIG from '#config';
 import { HttpStatusCode } from '#lib/errors.js';
 
@@ -21,7 +21,8 @@ router.get('/:productId', async function(req, res, next) {
 
 		res.render('product', { 
 			appName: CONFIG.appName || 'Redish',
-			product: product
+			product: product,
+			productImage: getProductImage(product.category)
 		});
 	} catch (error) {
 		console.error('Error loading product page:', error);

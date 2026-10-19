@@ -4,6 +4,27 @@ import { generateEmbeddings } from '#modules/ai/helpers/embeddings.js';
 
 const productRepository = new ProductRepository();
 
+// Stands in for a product image until the catalog has real ones
+const CATEGORY_EMOJIS = {
+    'Fruits & Vegetables': '🥗',
+    'Bakery, Cakes & Dairy': '🥛🍞',
+    'Eggs, Meat & Fish': '🥩🐟',
+    'Foodgrains, Oil & Masala': '🌾',
+    'Snacks & Branded Foods': '🥘',
+    'Beverages': '🥤',
+    'Gourmet & World Food': '🍝',
+    'Kitchen, Garden & Pets': '🏡'
+};
+
+/**
+ * Get the image to show for a product
+ * @param {string} category - The product's category
+ * @returns {string} An emoji for the category, or a shopping cart for categories without one
+ */
+export function getProductImage(category) {
+    return CATEGORY_EMOJIS[category] || '🛒';
+}
+
 /**
  * Find products using semantic search
  * @param {string} query - Search query
@@ -126,7 +147,7 @@ export async function findProductsForIngredients(ingredientNames) {
                     id: product.id,
                     name: product.name,
                     brand: product.brand || 'Generic',
-                    price: product.salePrice,
+                    salePrice: product.salePrice,
                     category: product.category,
                     rating: product.rating,
                 }

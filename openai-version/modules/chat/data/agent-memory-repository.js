@@ -26,7 +26,7 @@ class MemoryRepository {
             ? { namespaceId: CONFIG.agentMemoryNamespaceId }
             : undefined;
 
-        console.log(`🧠 Memory Repository initialized`);
+        console.log(`Connecting to Redis Agent Memory`);
         console.log(`   Server: ${CONFIG.agentMemoryUrl}`);
         console.log(`   Store: ${CONFIG.agentMemoryStoreId}`);
         console.log(`   Namespace: ${CONFIG.agentMemoryNamespaceId || '(none)'}`);
@@ -35,7 +35,7 @@ class MemoryRepository {
     /**
      * Get session memory (conversation history) for a session
      * @param {string} sessionId - Session identifier (uniquely identifies the conversation)
-     * @returns {Promise<{messages: Array<{role: string, content: string}>, summary: string|null}>}
+     * @returns {Promise<{messages: Array<{role: string, content: string, foundProducts?: Array}>, summary: string|null}>}
      */
     async getWorkingMemory(sessionId) {
         try {
@@ -45,7 +45,8 @@ class MemoryRepository {
 
             const messages = (session.events || []).map((event) => ({
                 role: String(event.role).toLowerCase(),
-                content: (event.content || []).map((part) => part.text).join('\n')
+                content: (event.content || []).map((part) => part.text).join('\n'),
+                foundProducts: event.metadata?.foundProducts
             }));
             const summary = session.summary?.text || null;
 
@@ -72,8 +73,9 @@ class MemoryRepository {
      * @param {string} userId - Actor/owner identifier
      * @param {string} userMessage
      * @param {string} assistantReply
+     * @param {Array} foundProducts - Products shown with the reply, saved as metadata on the assistant event
      */
-    async addConversationTurn(sessionId, userId, userMessage, assistantReply) {
+    async addConversationTurn(sessionId, userId, userMessage, assistantReply, foundProducts) {
         try {
             console.log(`💾 Appending conversation turn for session: ${sessionId}`);
 
@@ -93,7 +95,8 @@ class MemoryRepository {
                 actorId: ASSISTANT_ACTOR_ID,
                 role: 'ASSISTANT',
                 content: [{ text: assistantReply }],
-                createdAt: new Date(now + 1)
+                createdAt: new Date(now + 1),
+                ...(foundProducts?.length && { metadata: { foundProducts } })
             });
 
             console.log(`✅ Conversation turn saved`);

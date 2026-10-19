@@ -10,12 +10,13 @@ const langCache = new LangCache({
     apiKey: CONFIG.langcacheApiKey,
 });
 
-export default class ChatRepository {
+export default class KnowledgeBankRepository {
 
     /**
      * Search user query in langcache
      * @param {string} query
      * @param {string} [sessionId] - Optional session identifier to scope the search
+     * @returns {Promise<{content: string, foundProducts: Array}|null>} The cached reply and the products shown with it
      */
     async findFromSemanticCache(query, sessionId) {
         const searchParams = {
@@ -32,21 +33,31 @@ export default class ChatRepository {
 
         const result = await langCache.search(searchParams);
 
-        return result.data?.[0]?.response || null;
+        const cachedResponse = result.data?.[0]?.response;
+        if (!cachedResponse) {
+            return null;
+        }
+
+        // Entries are saved as JSON. Older entries are plain reply text.
+        try {
+            return JSON.parse(cachedResponse);
+        } catch {
+            return { content: cachedResponse, foundProducts: [] };
+        }
     }
 
     /**
      * Save results in Redis Langcache.
      * @async
      * @param {string} query - The original user query to store as the semantic prompt.
-     * @param {string} aiReplyMessage - The AI-generated response to be cached.
+     * @param {{content: string, foundProducts: Array}} aiResponse - The AI-generated reply and the products shown with it.
      * @param {number} ttlMillis - Time-to-live in milliseconds for the cached entry.
      * @param {string} [sessionId] - Optional unique identifier for the user session.
      */
-    async saveResponseInSemanticCache(query, aiReplyMessage, ttlMillis, sessionId) {
+    async saveResponseInSemanticCache(query, aiResponse, ttlMillis, sessionId) {
         const cacheParams = {
             prompt: query,
-            response: aiReplyMessage,
+            response: JSON.stringify(aiResponse),
             ttlMillis,
         };
 

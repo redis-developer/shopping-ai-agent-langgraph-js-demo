@@ -143,13 +143,14 @@ export async function runShoppingAgentWorkflow(userId, sessionId, message, looku
     const queryResult = {
         isCachedResponse: result.cacheStatus === "hit",
         content: finalReply,
+        foundProducts: result.foundProducts || [],
         usage: usageHandler.usage,
     };
 
     // Save conversation turn to Agent Memory (session memory)
     console.log(`\n💾 Saving conversation to Agent Memory...`);
 
-    await addConversationTurn(sessionId, userId, message, finalReply);
+    await addConversationTurn(sessionId, userId, message, finalReply, queryResult.foundProducts);
 
     console.log(`\n${'='.repeat(60)}`);
     console.log(`✅ Workflow Complete`);

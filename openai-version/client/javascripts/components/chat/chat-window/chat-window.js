@@ -1,23 +1,29 @@
 import { ChatMessage } from './chat-message.js';
 import { TypingIndicator } from './typing-indicator.js';
+import { DOM_IDS } from '@utils/constants.js';
 
 export class ChatWindow {
-    constructor(messagesContainerId, onProductAction = null) {
+    constructor(messagesContainerId, onProductAction = null, onProductOpen = null) {
         this.messagesContainer = document.getElementById(messagesContainerId);
         this.typingIndicator = new TypingIndicator(this.messagesContainer);
         this.onProductAction = onProductAction;
+        this.onProductOpen = onProductOpen;
     }
 
-    addMessage(message, sender, isCached = false, responseTime = null, usage = null) {
+    /**
+     * @param {string} message - The message text.
+     * @param {'user' | 'assistant'} sender
+     * @param {Object} [details] - Assistant response details: isCachedResponse, responseTime, usage, foundProducts.
+     */
+    addMessage(message, sender, details = {}) {
         if (!this.messagesContainer) return;
 
         const chatMessage = new ChatMessage(
             message,
             sender,
-            isCached,
-            responseTime,
-            usage,
-            this.onProductAction
+            details,
+            this.onProductAction,
+            this.onProductOpen
         );
 
         const messageElement = chatMessage.createElement();
@@ -47,22 +53,7 @@ export class ChatWindow {
 
     showNewChatMessage() {
         if (this.messagesContainer) {
-            this.messagesContainer.innerHTML = `
-                <div class="welcome-message">
-                    <div class="assistant-avatar">🤖</div>
-                    <div class="message-content">
-                        <p>New chat started! 🎉</p>
-                        <p>I can help you with:</p>
-                        <ul>
-                            <li>🥘 Recipe ingredients</li>
-                            <li>🔍 Finding products</li>
-                            <li>🛒 Managing your cart</li>
-                            <li>💡 Cooking suggestions</li>
-                        </ul>
-                        <p>What would you like to cook today?</p>
-                    </div>
-                </div>
-            `;
+            this.messagesContainer.replaceChildren(document.getElementById(DOM_IDS.NEW_CHAT_MESSAGE_TEMPLATE).content.firstElementChild.cloneNode(true));
         }
     }
 }

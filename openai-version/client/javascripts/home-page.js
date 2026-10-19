@@ -4,13 +4,13 @@ import { DOM_IDS, CSS_SELECTORS } from '@utils/constants.js';
 import { ChatWindow } from '@components/chat/chat-window/chat-window.js';
 import { ChatInput } from '@components/chat/chat-input/chat-input.js';
 import { SuggestionButtons } from '@components/chat/chat-input/suggestion-buttons.js';
-import { ChatToggle } from '@components/chat/chat-toggle.js';
 
 import { CartCount } from '@components/cart/cart-count.js';
 import { CartButton } from '@components/cart/cart-button.js';
 
 import { SearchBar } from '@components/search/search-bar.js';
 import { ProductCard } from '@components/products/product-card.js';
+import { ProductView } from '@components/products/product-view.js';
 import { NotificationSystem } from '@components/notifications/notification-system.js';
 import { SessionManager } from '@components/session/session-manager.js';
 
@@ -36,9 +36,24 @@ export class ShoppingApp {
             (error) => this.handleCartError(error)
         );
 
+        this.productView = new ProductView(
+            DOM_IDS.CANVAS_HOME,
+            DOM_IDS.PRODUCT_VIEW,
+            DOM_IDS.PRODUCT_FRAME,
+            DOM_IDS.CLOSE_PRODUCT_VIEW
+        );
+
+        // The product page shown in the canvas tells us when it changed the cart
+        window.addEventListener('message', (event) => {
+            if (event.origin === window.location.origin && event.data?.type === 'cart-count') {
+                this.cartCount.update(event.data.totalItems);
+            }
+        });
+
         this.chatWindow = new ChatWindow(
             DOM_IDS.CHAT_MESSAGES,
-            (productId, buttonElement) => this.handleProductAction(productId, buttonElement)
+            (productId, buttonElement) => this.handleProductAction(productId, buttonElement),
+            (productId) => this.productView.open(productId)
         );
 
         this.chatInput = new ChatInput(
@@ -51,12 +66,6 @@ export class ShoppingApp {
             this.chatInput.setValue(text);
             this.sendMessage(text);
         });
-
-        this.chatToggle = new ChatToggle(
-            DOM_IDS.CHAT_TOGGLE,
-            DOM_IDS.CHAT_WINDOW,
-            DOM_IDS.MINIMIZE_CHAT
-        );
 
         this.searchBar = new SearchBar(
             CSS_SELECTORS.SEARCH_BAR,
@@ -82,15 +91,9 @@ export class ShoppingApp {
             lookupSimilarResponses,
             onSuccess: (chatMessage) => {
                 this.chatWindow.hideTypingIndicator();
-                this.chatWindow.addMessage(
-                    chatMessage.content,
-                    'assistant',
-                    chatMessage.isCachedResponse,
-                    chatMessage.responseTime,
-                    chatMessage.usage
-                );
+                this.chatWindow.addMessage(chatMessage.content, 'assistant', chatMessage);
 
-                if (chatMessage.content && chatMessage.content.includes('ID:') && !this.cartCountLoaded) {
+                if (chatMessage.foundProducts?.length && !this.cartCountLoaded) {
                     this.cartCount.load(this.userId);
                     this.cartCountLoaded = true;
                 }
@@ -123,14 +126,12 @@ export class ShoppingApp {
     }
 
     handleMainSearch(query) {
-        this.chatToggle.open();
         this.chatInput.setValue(`Find ${query}`);
         this.sendMessage(`Find ${query}`);
     }
 
     handleProductCardAction(productName, categoryName) {
         if (categoryName) {
-            this.chatToggle.open();
             this.chatInput.setValue(`Show me products in ${categoryName}`);
             this.chatInput.focus();
         } else if (productName) {

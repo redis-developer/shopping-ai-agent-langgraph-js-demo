@@ -3,9 +3,10 @@ import { AIMessage } from "@langchain/core/messages";
 import { ToolNode } from "@langchain/langgraph/prebuilt";
 import { shoppingTools } from "./tools/shopping-tools.js";
 import { memoryTools } from "./tools/memory-tools.js";
-import { checkSemanticCache, saveToSemanticCache } from "#modules/chat/domain/chat-service.js";
+import { checkSemanticCache, saveToSemanticCache } from "#modules/chat/domain/knowledge-bank-service.js";
 import { determineToolBasedCacheTTL } from "../helpers/caching.js";
 import { searchLongTermMemories } from "#modules/chat/domain/agent-memory-service.js";
+import { getProductImage } from "#modules/products/domain/product-service.js";
 import CONFIG from "#config";
 
 const allTools = [...shoppingTools, ...memoryTools];
@@ -26,13 +27,14 @@ export const queryCacheCheck = async (state) => {
     console.log(`🔍 Checking semantic cache for: "${userQuery.substring(0, 50)}..."`);
     
     try {
-        const cachedResult = await checkSemanticCache(userQuery);
+        const cachedResponse = await checkSemanticCache(userQuery);
 
-        if (cachedResult) {
+        if (cachedResponse) {
             console.log("🎯 Semantic cache HIT - returning previous response");
             return {
                 cacheStatus: "hit",
-                messages: [...state.messages, new AIMessage(cachedResult)],
+                messages: [...state.messages, new AIMessage(cachedResponse.content)],
+                foundProducts: cachedResponse.foundProducts,
                 sessionId: state.sessionId
             };
         }
@@ -89,17 +91,13 @@ export const personalShopperAgent = async (state) => {
         ? `\n**Summary of the earlier conversation in this session:**\n${state.conversationSummary}\n`
         : "";
 
-    const systemPrompt = `You are a helpful grocery shopping assistant. Use your tools to find recipe ingredients, search products, manage the cart, and answer cooking questions.
+    const systemPrompt = `You are a helpful grocery shopping assistant. Use your tools to find recipe ingredients, search for products and groceries, manage the cart, and answer cooking questions.
 ${userContextBlock}${conversationSummaryBlock}
-**Tool selection:**
-- For recipe/ingredient questions, ALWAYS use find_recipe_ingredient_products first.
-- For "more options" or "more brands" requests, use search_products.
 
 **Response formatting:**
 - Tool results are JSON. Present them in plain language, never as raw JSON.
-- Show each product in exactly this format: **Product Name** by Brand - ₹Price (ID: 12345) [🛒 Add]
-- Always include the product ID as a plain number, like (ID: 3218). Do NOT create markdown links with # or (), and do not add any JavaScript code.
-- For recipe ingredients, show each ingredient with its suggested product, then offer: "Want more options for any ingredient? Just ask!"
+- Show each product in exactly this format: **Product Name** by Brand (ID: 12345) - ₹Price
+- For recipe ingredients, list each ingredient with its quantity, in order (the cards of the products found appear below in the same order), then offer: "Want more options for any ingredient? Just ask!"
 - Use emojis and clear structure. Keep responses helpful, fast, and easy to interact with.`;
 
     const modelWithTools = model.bindTools(allTools);
@@ -132,6 +130,8 @@ export const toolNode = new ToolNode(allTools);
 
 /**
  * Node 5: Process Results for caching
+ * Collects the products the tools found this turn (the UI shows them as product cards)
+ * and saves the reply together with them to the semantic cache.
  */
 export const processWorkOutputWithCaching = async (state) => {
     // Nothing to cache if the model call failed (the reply is just an apology)
@@ -144,26 +144,48 @@ export const processWorkOutputWithCaching = async (state) => {
     const lastUserMessage = state.messages.findLast((message) => message.getType() === "human");
     const query = lastUserMessage?.content || "";
 
-    // Determine cache TTL based on tool execution results
     // The history loaded from Agent Memory has no tool messages, so every tool
     // message in state.messages belongs to the current turn
-    const toolResults = state.messages
+    const toolMessages = state.messages
         .filter((message) => message.getType() === "tool")
         .map((toolMessage) => {
-            let success;
+            let result;
             try {
-                success = JSON.parse(toolMessage.content).success !== false;
+                result = JSON.parse(toolMessage.content);
             } catch {
-                success = false;
+                result = { success: false };
             }
-            return { toolName: toolMessage.name, success };
+            return { toolName: toolMessage.name, result };
         });
+
+    // Products the tools found this turn (product search and recipe ingredient results)
+    const foundProducts = [];
+    for (const { result } of toolMessages) {
+        const products = [
+            ...(result.products || []),
+            ...(result.ingredientProducts || []).map((item) => item.suggestedProduct).filter(Boolean)
+        ];
+        for (const product of products) {
+            if (!foundProducts.some((foundProduct) => foundProduct.id === product.id)) {
+                foundProducts.push({
+                    id: product.id,
+                    name: product.name,
+                    price: product.salePrice,
+                    image: getProductImage(product.category),
+                    rating: product.rating
+                });
+            }
+        }
+    }
+
+    // Determine cache TTL based on tool execution results
+    const toolResults = toolMessages.map(({ toolName, result }) => ({ toolName, success: result.success !== false }));
     const cacheTTL = determineToolBasedCacheTTL(toolResults);
 
     // Don't cache if TTL is 0 (personal/dynamic operations or failures)
     if (cacheTTL === 0) {
         console.log("Skipping cache for personal/dynamic operations or tool failures");
-        return {};
+        return { foundProducts };
     }
 
     try {
@@ -177,7 +199,7 @@ export const processWorkOutputWithCaching = async (state) => {
 
         await saveToSemanticCache(
             sanitizedQuery,
-            sanitizedResponse,
+            { content: sanitizedResponse, foundProducts },
             cacheTTL,
             state.sessionId
         );
@@ -189,9 +211,8 @@ export const processWorkOutputWithCaching = async (state) => {
         // Don't fail the whole request if caching fails
     }
 
-    return {};
+    return { foundProducts };
 };
-
 
 
 /**

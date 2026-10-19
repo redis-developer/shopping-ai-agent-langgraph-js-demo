@@ -1,3 +1,5 @@
+import { DOM_IDS } from '@utils/constants.js';
+
 export class RelatedProducts {
     constructor(gridId = 'related-products-grid') {
         this.grid = document.getElementById(gridId);
@@ -42,35 +44,28 @@ export class RelatedProducts {
             return;
         }
 
-        this.grid.innerHTML = products.map(product => `
-            <div class="product-card" role="listitem">
-                <div class="product-image">
-                    <span class="product-emoji">${this.getCategoryEmoji(product.category)}</span>
-                </div>
-                <div class="product-info">
-                    <h4>${product.name}</h4>
-                    <p class="product-price">₹${product.salePrice}</p>
-                    <a href="/products/${product.id}" class="view-btn">VIEW PRODUCT</a>
-                </div>
-            </div>
-        `).join('');
+        const cards = products.map((product) => {
+            const card = document.getElementById(DOM_IDS.RELATED_PRODUCT_TEMPLATE).content.firstElementChild.cloneNode(true);
+            card.querySelector('.product-emoji').textContent = this.getCategoryEmoji(product.category);
+            card.querySelector('h4').textContent = product.name;
+            card.querySelector('.product-price').textContent = `₹${product.salePrice}`;
+            card.querySelector('.view-btn').href = `/products/${product.id}`;
+            return card;
+        });
+        this.grid.replaceChildren(...cards);
     }
 
     showPlaceholder() {
-        this.grid.innerHTML = `
-            <div class="placeholder-message">
-                <p>Related products feature coming soon!</p>
-            </div>
-        `;
+        this.grid.replaceChildren(document.getElementById(DOM_IDS.RELATED_PLACEHOLDER_TEMPLATE).content.firstElementChild.cloneNode(true));
     }
 
     getCategoryEmoji(category) {
         const emojiMap = {
-            'Fruits & Vegetables': '🥬',
-            'Bakery & Dairy': '🥛',
-            'Meat & Seafood': '🐟',
+            'Fruits & Vegetables': '🥗',
+            'Bakery & Dairy': '🥛🍞',
+            'Meat & Seafood': '🥩🐟',
             'Grains & Pulses': '🌾',
-            'Snacks & Beverages': '🍪',
+            'Snacks & Beverages': '🥘',
             'Household Items': '🧽'
         };
         return emojiMap[category] || '🛒';

@@ -16,6 +16,7 @@ router.post('/', async function(req, res, next) {
         const reply = await processShoppingInquiry(userId, sessionId, message, lookupSimilarResponses);
         res.json({ 
             content: reply.content,
+            foundProducts: reply.foundProducts,
             isCachedResponse: reply.isCachedResponse,
             usage: reply.usage
         });

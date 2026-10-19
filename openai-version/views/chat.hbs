@@ -37,7 +37,9 @@
     }
     </script>
 </head>
-<body class="neo-brutalist-theme">
+<body class="neo-brutalist-theme chat-page">
+    <div class="app-layout">
+    <div class="main-column">
     <!-- Main Shopping Website -->
     <header class="header">
         <div class="header-container">
@@ -46,7 +48,6 @@
                     <i class="fas fa-shopping-basket"></i>
                     {{appName}}
                 </h1>
-                <span class="tagline">FRESH • FAST • AI-POWERED</span>
             </div>
             
             <div class="search-bar">
@@ -67,6 +68,8 @@
         </div>
     </header>
 
+    <main class="canvas">
+    <div id="canvas-home">
     <!-- Hero Section -->
     <section class="hero-section">
         <div class="hero-content">
@@ -150,17 +153,20 @@
             </div>
         </div>
     </section>
+    </div>
 
-    <!-- Chat Assistant (Floating) -->
-    <div class="chat-assistant" id="chat-assistant">
-        <!-- Chat Toggle Button -->
-        <button class="chat-toggle" id="chat-toggle">
-            <i class="fas fa-robot"></i>
-            <span class="chat-bubble">NEED HELP FINDING SOMETHING? 🤔</span>
+    <!-- Product details (the product page, shown in place of the sections above) -->
+    <div id="product-view" class="product-view" hidden>
+        <button type="button" id="close-product-view" class="product-view-back">
+            <i class="fas fa-arrow-left"></i> BACK TO SHOPPING
         </button>
+        <iframe id="product-frame" class="product-frame" title="Product details"></iframe>
+    </div>
+    </main>
+    </div>
 
-        <!-- Chat Window -->
-        <div class="chat-window-container" id="chat-window">
+    <!-- Chat Assistant (docked) -->
+    <aside class="chat-assistant" id="chat-assistant">
             <div class="chat-header">
                 <div class="assistant-info">
                     <div class="assistant-avatar">🤖</div>
@@ -168,11 +174,6 @@
                         <h4>SHOPPING ASSISTANT</h4>
                         <span class="status">ONLINE • READY TO HELP!</span>
                     </div>
-                </div>
-                <div class="chat-actions">
-                    <button class="minimize-chat" id="minimize-chat">
-                        <i class="fas fa-minus"></i>
-                    </button>
                 </div>
             </div>
 
@@ -193,7 +194,85 @@
                         </div>
                     </div>
                 </div>
-                
+
+                <!-- Product card shown in assistant messages -->
+                <template id="product-card-template">
+                    <div class="chat-product-card">
+                        <div class="chat-product-top">
+                            <span class="chat-product-image"></span>
+                            <a class="chat-product-name"></a>
+                        </div>
+                        <div class="chat-product-bottom">
+                            <div class="chat-product-meta">
+                                <span class="price"></span>
+                                <span class="chat-product-rating"></span>
+                            </div>
+                            <button type="button" class="add-btn chat-product-add" title="Add to cart">🛒 ADD</button>
+                        </div>
+                    </div>
+                </template>
+
+                <!-- Messages in the chat -->
+                <template id="user-message-template">
+                    <div class="message user-message">
+                        <div class="message-content user-content">
+                            <div class="message-text"></div>
+                            <div class="message-time"></div>
+                        </div>
+                        <div class="user-avatar">👤</div>
+                    </div>
+                </template>
+
+                <template id="assistant-message-template">
+                    <div class="message assistant-message">
+                        <div class="assistant-avatar">🤖</div>
+                        <div class="message-content assistant-content">
+                            <div class="message-text"></div>
+                            <div class="message-time"></div>
+                        </div>
+                    </div>
+                </template>
+
+                <!-- Usage breakdown shown in an assistant message -->
+                <template id="response-info-template">
+                    <div class="response-info">
+                        <details>
+                            <summary>Usage breakdown</summary>
+                            <p class="cached-message">This seems familiar, so we've pulled in an earlier response. No waiting in line!</p>
+                            <ul></ul>
+                            <p class="no-model-calls-message">No model calls were needed for this turn.</p>
+                        </details>
+                    </div>
+                </template>
+
+                <template id="typing-indicator-template">
+                    <div class="message typing-indicator">
+                        <div class="assistant-avatar">🤖</div>
+                        <div class="message-content typing-content">
+                            <div class="typing-dots">
+                                <span></span><span></span><span></span>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+
+                <template id="new-chat-message-template">
+                    <div class="welcome-message">
+                        <div class="assistant-avatar">🤖</div>
+                        <div class="message-content">
+                            <p>New chat started! 🎉</p>
+                            <p>I can help you with:</p>
+                            <ul>
+                                <li>🥘 Recipe ingredients</li>
+                                <li>🔍 Finding products</li>
+                                <li>🛒 Managing your cart</li>
+                                <li>💡 Cooking suggestions</li>
+                            </ul>
+                            <p>What would you like to cook today?</p>
+                        </div>
+                    </div>
+                </template>
+
                 <form id="chat-form" class="chat-input-form">
                     <div class="lookup-toggle-row">
                         <label class="lookup-toggle">
@@ -228,7 +307,7 @@
                     </div>
                 </form>
             </div>
-        </div>
+    </aside>
     </div>
 
     <script src="/javascripts/home-page.js" type="module"></script>

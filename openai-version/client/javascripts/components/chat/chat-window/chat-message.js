@@ -1,98 +1,107 @@
 import { MessageFormatter } from './message-formatter.js';
+import { DOM_IDS } from '@utils/constants.js';
 
 export class ChatMessage {
-    constructor(message, sender, isCached = false, responseTime = null, usage = null, onProductAction = null) {
+    /**
+     * @param {string} message - The message text.
+     * @param {'user' | 'assistant'} sender
+     * @param {Object} [details] - Assistant response details: isCachedResponse, responseTime, usage, foundProducts.
+     * @param {(productId: string, buttonElement: HTMLElement) => void} [onProductAction] - Called when a product card's add button is clicked.
+     * @param {(productId: string) => void} [onProductOpen] - Called when a product card is clicked.
+     */
+    constructor(message, sender, details = {}, onProductAction = null, onProductOpen = null) {
         this.message = message;
         this.sender = sender;
-        this.isCached = isCached;
-        this.responseTime = responseTime;
-        this.usage = usage;
+        this.isCached = details.isCachedResponse || false;
+        this.responseTime = details.responseTime ?? null;
+        this.usage = details.usage || null;
+        this.foundProducts = details.foundProducts || [];
         this.onProductAction = onProductAction;
+        this.onProductOpen = onProductOpen;
+    }
+
+    createProductCards() {
+        if (this.foundProducts.length === 0) return null;
+
+        const list = document.createElement('div');
+        list.className = 'chat-product-list';
+
+        this.foundProducts.forEach((product) => {
+            const card = document.getElementById(DOM_IDS.PRODUCT_CARD_TEMPLATE).content.firstElementChild.cloneNode(true);
+            card.querySelector('.chat-product-image').textContent = product.image;
+            card.querySelector('.chat-product-name').textContent = product.name;
+            card.querySelector('.chat-product-name').href = `/products/${product.id}`;
+            card.querySelector('.chat-product-rating').textContent = product.rating ? ` · ⭐ ${product.rating}` : '';
+            card.querySelector('.price').textContent = `₹${product.price}`;
+
+            card.querySelector('.chat-product-add').addEventListener('click', async (event) => {
+                await this.onProductAction?.(product.id, event.currentTarget);
+            });
+
+            // Clicking anywhere else on the card shows the product page
+            card.addEventListener('click', (event) => {
+                if (event.target.closest('button')) return;
+                event.preventDefault();
+                this.onProductOpen?.(product.id);
+            });
+
+            list.appendChild(card);
+        });
+
+        return list;
     }
 
     createResponseInfo() {
         // Only responses that went through the server have a time (not local error messages)
-        if (this.responseTime === null) return '';
+        if (this.responseTime === null) return null;
 
         const usage = this.usage || {};
         const totalTokens = usage.totalTokens || 0;
 
         const detailRows = (counts) => Object.entries(counts || {})
-            .map(([name, value]) => `<li>${name.charAt(0).toUpperCase()}${name.slice(1).replace(/_/g, ' ')}: ${value.toLocaleString()}</li>`)
-            .join('');
+            .map(([name, value]) => [`${name.charAt(0).toUpperCase()}${name.slice(1).replace(/_/g, ' ')}`, value.toLocaleString()]);
 
-        const cachedMessage = this.isCached
-            ? "<p>This seems familiar, so we've pulled in an earlier response. No waiting in line!</p>"
-            : '';
-        const noModelCallsMessage = totalTokens === 0
-            ? '<p>No model calls were needed for this turn.</p>'
-            : '';
+        const rows = [
+            ['Response time', `${this.responseTime.toFixed(3)}s`],
+            ['Input tokens', (usage.inputTokens || 0).toLocaleString()],
+            ...detailRows(usage.inputTokenDetails),
+            ['Output tokens', (usage.outputTokens || 0).toLocaleString()],
+            ...detailRows(usage.outputTokenDetails),
+            ['Total tokens', totalTokens.toLocaleString()]
+        ];
 
-        return `
-            <div class="response-info">
-                <details>
-                    <summary>Usage breakdown</summary>
-                    ${cachedMessage}
-                    <ul>
-                        <li>Response time: ${this.responseTime.toFixed(3)}s</li>
-                        <li>Input tokens: ${(usage.inputTokens || 0).toLocaleString()}</li>
-                        ${detailRows(usage.inputTokenDetails)}
-                        <li>Output tokens: ${(usage.outputTokens || 0).toLocaleString()}</li>
-                        ${detailRows(usage.outputTokenDetails)}
-                        <li>Total tokens: ${totalTokens.toLocaleString()}</li>
-                    </ul>
-                    ${noModelCallsMessage}
-                </details>
-            </div>
-        `;
+        const responseInfo = document.getElementById(DOM_IDS.RESPONSE_INFO_TEMPLATE).content.firstElementChild.cloneNode(true);
+        responseInfo.querySelector('.cached-message').hidden = !this.isCached;
+        responseInfo.querySelector('.no-model-calls-message').hidden = totalTokens !== 0;
+
+        const list = responseInfo.querySelector('ul');
+        rows.forEach(([label, value]) => {
+            const item = document.createElement('li');
+            item.textContent = `${label}: ${value}`;
+            list.appendChild(item);
+        });
+
+        return responseInfo;
     }
 
     createElement() {
-        const messageDiv = document.createElement('div');
-        messageDiv.className = `message ${this.sender}-message`;
+        const isUser = this.sender === 'user';
+        const messageDiv = document.getElementById(isUser ? DOM_IDS.USER_MESSAGE_TEMPLATE : DOM_IDS.ASSISTANT_MESSAGE_TEMPLATE).content.firstElementChild.cloneNode(true);
 
-        const timestamp = MessageFormatter.formatTimestamp(new Date());
+        messageDiv.querySelector('.message-text').innerHTML = MessageFormatter.formatMessage(this.message);
 
-        if (this.sender === 'user') {
-            messageDiv.innerHTML = `
-                <div class="message-content user-content">
-                    ${MessageFormatter.formatMessage(this.message)}
-                    <div class="message-time">${timestamp}</div>
-                </div>
-                <div class="user-avatar">👤</div>
-            `;
-        } else {
-            messageDiv.innerHTML = `
-                <div class="assistant-avatar">🤖</div>
-                <div class="message-content assistant-content">
-                    ${MessageFormatter.formatMessage(this.message)}
-                    ${this.createResponseInfo()}
-                    <div class="message-time">${timestamp}</div>
-                </div>
-            `;
-        }
+        const time = messageDiv.querySelector('.message-time');
+        time.textContent = MessageFormatter.formatTimestamp(new Date());
 
-        if (this.sender === 'assistant') {
-            this.attachProductInteractions(messageDiv);
+        // Product cards and the usage breakdown go between the reply text and the time
+        if (!isUser) {
+            const productCards = this.createProductCards();
+            if (productCards) time.before(productCards);
+
+            const responseInfo = this.createResponseInfo();
+            if (responseInfo) time.before(responseInfo);
         }
 
         return messageDiv;
-    }
-
-    attachProductInteractions(messageElement) {
-        const cartBtns = messageElement.querySelectorAll('.cart-icon-btn');
-        if (cartBtns.length === 0) {
-            return;
-        }
-
-        cartBtns.forEach(btn => {
-            btn.addEventListener('click', async (e) => {
-                e.preventDefault();
-                const productId = btn.dataset.productId;
-                if (productId && this.onProductAction) {
-                    await this.onProductAction(productId, btn);
-                }
-            });
-        });
     }
 }
