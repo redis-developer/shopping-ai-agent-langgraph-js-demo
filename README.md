@@ -6,17 +6,18 @@ Redish is an AI-powered grocery shopping platform that combines Redis's speed wi
 
 ## App screenshots
 
-![App home page](./screenshots/home-screen.png)
+![App home page](./docs/screenshots/home-screen.png)
 
 ---
 
 ## Product Features
 
 - **Vibe Shopping**: Describe a mood or occasion in everyday words, like "cozy movie night snacks" or "a light summer lunch", and get products that fit, using semantic search
-- **Recipe Ingredients**: Ask for ingredients for any recipe and get suggested products
-- **Product Search**: Find products by name, category, or description
-- **Smart Recommendations**: AI suggests alternatives and complementary items
-- **Cart Management**: Add, remove, and view cart items through natural conversation
+- **Product Search**: Find products by name, category, or description.
+- **Recipe Ingredients**: Ask for ingredients for any recipe and get suggested products.
+- **Product Cards**: Products the assistant finds show up as cards in the chat, each with an Add to cart button and a product details view.
+- **Smart Recommendations**: AI suggests alternatives and complementary items.
+- **Cart Management**: Add, remove, and view cart items through natural conversation.
 
 ## Technical features
 
@@ -29,16 +30,27 @@ Redish is an AI-powered grocery shopping platform that combines Redis's speed wi
 
 ## Setup
 
+### Step 1: Redis database
 
-### Step 1: Redis Agent Memory
+Redis stores the products, their vector embeddings and the shopping carts. It needs the JSON and Search capabilities, which Redis Cloud databases support (and Redis 8 includes).
 
-Both versions store conversations and shopper preferences in [Redis Agent Memory](https://redis.io/docs/latest/develop/ai/context-engine/agent-memory/). Create a service in the Redis Cloud console (see the [TypeScript SDK quickstart](https://redis.io/docs/latest/develop/ai/context-engine/agent-memory/typescript-sdk-quickstart/) for the steps), then add its connection details to the `.env` file of the version you run:
+[Create a database in Redis Cloud](https://redis.io/docs/latest/operate/rc/databases/create-database), then add its connection string to your `.env` file:
+
+```bash
+REDIS_URL="redis://default:your_password@your_redis_host:your_redis_port"
+```
+
+The Redis Agent Memory and LangCache service in Steps 2 and 3 also runs on a Redis Cloud database, and you can pick this one.
+
+### Step 2: Redis Agent Memory
+
+The app stores conversations and shopper preferences in [Redis Agent Memory](https://redis.io/docs/latest/develop/ai/context-engine/agent-memory/). Create a service in the Redis Cloud console (see the [TypeScript SDK quickstart](https://redis.io/docs/latest/develop/ai/context-engine/agent-memory/typescript-sdk-quickstart/) for the steps), then add its connection details to the `.env` file at the repo root:
 
 ```bash
 AGENT_MEMORY_URL="your_agent_memory_endpoint"
 AGENT_MEMORY_STORE_ID="your_store_id"
 AGENT_MEMORY_API_KEY="your_agent_memory_api_key"
-#AGENT_MEMORY_NAMESPACE_ID="your_namespace_id"  # Optional: scope memories to a namespace
+# AGENT_MEMORY_NAMESPACE_ID="your_namespace_id"  # Optional: scope memories to a namespace
 ```
 
 The app expects one custom memory type, `shopper_preference`, in the service (Redis Cloud console, **Memory types & extraction**, **Add type**). The memory tools in the code use these names, so keep them in step if you change them.
@@ -67,62 +79,61 @@ Other memory settings (suggested starting points):
 | Extraction cadence | 1 minute while testing, 5 to 15 minutes in production |
 | Automatic summarization | On, after about 12 to 20 messages |
 
-### Step 2
+### Step 3: Redis LangCache
 
-Choose one of the following:
+The knowledge bank, which lets similar questions reuse an earlier answer, is a semantic cache built on [Redis LangCache](https://redis.io/langcache/). Create a LangCache service in the Redis Cloud console by following [Create a LangCache service](https://redis.io/docs/latest/operate/iris/langcache/create-service/), with two things in mind:
 
-- **OpenAI Version Setup**: See [openai-version/README.md](openai-version/README.md)
-- **AWS Bedrock Version Setup**: See [aws-bedrock-version/README.md](aws-bedrock-version/README.md)
+- Select **Create custom service** and, under **Attributes settings**, add a custom attribute named `sessionId`. The app saves each cache entry with it.
+- Copy the service key when it's shown. It's only available once, right after the service is created.
 
----
-
-## 📁 Repository Structure
-
-This repository contains two versions of the demo:
-
-```
-│ 
-├── openai-version/       # OpenAI-powered version
-│   ├── package.json
-│   ├── index.js
-│   ├── modules/
-│   └── ...
-│   └── README.md         # Setup instructions
-│
-├── aws-bedrock-version/  # AWS Bedrock version
-│   ├── package.json
-│   ├── index.js
-│   ├── modules/
-│   └── ...
-│   └── README.md         # Setup instructions
-└── README.md             # This file
-```
-
-## Quick Start
-
-Choose your preferred AI provider:
-
-### Option 1: OpenAI Version
+Then add the service details to your `.env` file. The API base URL and cache ID are in the **Connectivity** section of the service's **Configuration** page:
 
 ```bash
-cd openai-version
-# Follow setup instructions in openai-version/README.md
+LANGCACHE_API_KEY="your_langcache_service_key"
+LANGCACHE_API_BASE_URL="your_langcache_api_base_url"
+LANGCACHE_CACHE_ID="your_langcache_cache_id"
 ```
 
-### Option 2: AWS Bedrock Version
+### Step 4: Choose an AI provider
+
+Copy `.env.example` to `.env`, set `AI_PROVIDER`, and follow the setup for the provider you picked:
+
+| `AI_PROVIDER` | Chat model and embeddings | Guardrails | Setup |
+|---|---|---|---|
+| `openai` (default) | OpenAI `gpt-4o-mini` (change it with `MODEL_NAME`) and `text-embedding-3-small` | None | [docs/providers/openai.md](docs/providers/openai.md) |
+| `aws-bedrock` | AWS Bedrock Claude (default `global.anthropic.claude-opus-4-7`) and Titan Text Embeddings V2 | ✅ Bedrock Guardrails | [docs/providers/aws-bedrock.md](docs/providers/aws-bedrock.md) |
+
+### Step 5: Install dependencies and load sample dataset
 
 ```bash
-cd aws-bedrock-version
-# Follow setup instructions in aws-bedrock-version/README.md
+cp .env.example .env       # then fill in your values
+npm run install:openai     # or: npm run install:aws-bedrock
+npm run load-products      # load the sample groceries (first time only)
 ```
 
-## 📋 Version Comparison
+`npm run install:<provider>` installs the app and the one provider you chose. A plain `npm install` installs every provider.
 
-| Feature | OpenAI Version | AWS Bedrock Version |
-|---------|----------------------|-------------------|
-| **AI Provider** | OpenAI GPT-4 | AWS Bedrock Claude 3.5 Sonnet |
-| **Embeddings** | OpenAI Embeddings | AWS Bedrock Titan Text Embeddings V2 |
-| **AI Guardrails** | Basic content filtering | ✅ AWS Bedrock Guardrails |
+If you switch providers, reload the products with `npm run load-products -- --drop`, so the stored vectors match the new provider's embeddings.
+
+### Step 6: Run and view the app
+
+```bash
+npm start # Starts the app
+```
+
+#### Prefer Docker?
+
+1. Run `docker compose up`
+2. Next, run `docker compose exec redish-app npm run load-products`.
+
+Open [localhost:3000](http://localhost:3000) (or whatever `SERVER_PORT` you have provided)
+
+#### Try different shoppers
+
+Add `?name=` to the URL to act as a different shopper, for example `http://localhost:3000/?name=ashwin`. Without it, you're "User".
+
+- Each shopper has their own cart and their own saved preferences, so a shopping preference you give as one shopper doesn't show up for another.
+- The browser remembers the shopper's chat session. Changing the name starts a new conversation.
 
 ---
 
@@ -135,8 +146,9 @@ cd aws-bedrock-version
 - **HTML + CSS + Vanilla JS** (Frontend)
 
 ### AI Providers
-- **OpenAI Version**: OpenAI API (GPT-4 for intelligent responses)
-- **AWS Bedrock Version**: AWS Bedrock (Claude 3.5 Sonnet + Titan Text Embeddings V2)
+Pick one with `AI_PROVIDER`:
+- **OpenAI**: OpenAI API (`gpt-4o-mini` by default, plus `text-embedding-3-small` embeddings)
+- **AWS Bedrock**: AWS Bedrock (Claude, plus Titan Text Embeddings V2 and Guardrails)
 
 ---
 
@@ -150,35 +162,76 @@ The grocery agent uses a LangGraph-powered AI agent that routes requests through
 4. **Modules Layer**: Product, cart, and chat modules
 5. **Redis Storage**: Vector embeddings, semantic cache, and session data
 
+### Overview
+
+**Default flow using OpenAI:**
+
+![Agentic AI workflow, OpenAI](./docs/technical-diagrams/architecture-overview.png)
+
+**Flow with AWS Bedrock as the provider** (adds a "front-desk" agent and PII guardrails):
+
+![Agentic AI workflow, AWS Bedrock](./docs/technical-diagrams/architecture-overview-aws-bedrock.png)
+
+### Components and request flow
+
+![Components and request flow](./docs/technical-diagrams/component-diagram-mermaid.svg)
+
+### Agent graph
+
+Generated by langgraph
+
+**Default workflow with OpenAI**
+
+![Agent graph, OpenAI](./docs/technical-diagrams/agent-graph-openai.png)
+
+**Workflow with AWS Bedrock**
+
+![Agent graph, AWS Bedrock](./docs/technical-diagrams/agent-graph-aws-bedrock.png)
+
 ### Project architecture
 
 ```
-modules/
-  ├── products/                # Product Business Component
-  │   ├── api/                    # REST API endpoints
-  │   ├── domain/                 # Business logic
-  │   └── data/                   # Data access layer
-  ├── cart/                    # Cart Business Component
-  │   ├── api/
-  │   ├── domain/
-  │   └── data/
-  ├──chat/                     # Chat/Cache Business Component
-  │   ├── api/
-  │   ├── domain/
-  │   └── data/
-  ├── ai/agentic-shopping-workflow/     # AI Agent
-  │   ├── tools/                  # API/Interface Layer
-  │   │   ├── shopping-tools.js      # Products, cart and cooking-knowledge tools
-  │   │   └── memory-tools.js        # Conversation and shopper-preference memory tools
-  │   ├── nodes.js                # Agent Logic
-  │   ├── index.js                # Orchestration
-  │   └── state/                  # Data Access
+docs/                             # Architecture diagrams, screenshots and provider setup guides
+src/
+  ├── index.js, config.js         # Server and configuration (AI_PROVIDER, keys)
+  ├── client/                     # HTML + CSS + Vanilla JS UI (docked chat, product cards)
+  ├── views/                      # Handlebars pages
+  ├── lib/                        # Shared helpers (errors)
+  ├── scripts/                    # load-products.js, debug-config.js
+  └── modules/
+      ├── products/               # Product Business Component
+      │   ├── api/                    # REST API endpoints
+      │   ├── domain/                 # Business logic
+      │   └── data/                   # Data access layer
+      ├── cart/                   # Cart Business Component
+      │   ├── api/
+      │   ├── domain/
+      │   └── data/
+      ├── chat/                   # Chat, Agent Memory and knowledge bank (semantic cache)
+      │   ├── api/
+      │   ├── domain/
+      │   └── data/
+      ├── db/                     # Shared Redis client
+      └── ai/
+          ├── providers/          # One package per AI provider, chosen by AI_PROVIDER
+          │   ├── index.js           # Loads the chosen provider
+          │   ├── openai/            # Chat model, embeddings, sanitizing
+          │   └── aws-bedrock/       # Same, plus guardrails
+          ├── workflows/agent/    # The LangGraph shopping agent
+          │   ├── tools/             # Interface layer
+          │   │   ├── shopping-tools.js  # Products, cart and cooking-knowledge tools
+          │   │   └── memory-tools.js    # Conversation and shopper-preference memory tools
+          │   ├── nodes.js           # Agent logic
+          │   ├── state.js           # Graph state
+          │   └── index.js           # Orchestration
+          └── helpers/            # Cache rules, token usage tracking
 ```
+
 ---
 
 ## API Endpoints
 
-- `POST /api/chat` - Main chat interface for AI shopping assistant
+- `POST /api/ai/chat` - Main chat interface for AI shopping assistant
 - `GET /api/products/search` - Search products with text/vector similarity
 - `POST /api/cart/add` - Add items to shopping cart
 - `GET /api/cart` - View cart contents
@@ -216,7 +269,7 @@ If you find a bug or have a feature request, [open an issue](https://github.com/
 
 ## Motivations
 
-This project is a learning-focused demonstration designed to help developers understand:It shows how the pieces of an AI-powered shopping assistant fit together, and it isn't meant to be a finished store. It's for developers who want to see:
+This project is a learning-focused demonstration designed to help developers understand:
 
 - **AI building blocks**: embeddings and vector search, semantic caching, agent memory, and tool-calling workflows
 - **Application structure**: a layout for AI apps that keeps routes, business logic, and data access apart

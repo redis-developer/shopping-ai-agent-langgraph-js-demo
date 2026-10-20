@@ -1,0 +1,11 @@
+{
+  "name": "@redish/ai-provider-openai",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "index.js",
+  "dependencies": {
+    "@langchain/openai": "^1.6.2",
+    "openai": "7.34.0"
+  }
+}

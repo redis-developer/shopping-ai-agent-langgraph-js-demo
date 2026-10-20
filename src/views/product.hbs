@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>{{product.name}} - {{appName}}</title>
+    <link rel="stylesheet" href="../stylesheets/chat.css" media="screen,print" >
+    <link rel="stylesheet" href="../stylesheets/product.css" media="screen,print" >
+    <link rel="icon" href="../images/redis-avatar.png" type="image/png">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+    <meta name="description" content="{{product.description}}">
+    <meta property="og:title" content="{{product.name}} - {{appName}}">
+    <meta property="og:description" content="{{product.description}}">
+
+    <!-- Import Maps for Client-Side Module Resolution -->
+    <script type="importmap">
+    {
+        "imports": {
+            "@components/": "/javascripts/components/",
+            "@services/": "/javascripts/services/",
+            "@utils/": "/javascripts/utils/"
+        }
+    }
+    </script>
+</head>
+<body class="neo-brutalist-theme">
+    <!-- Header -->
+    <header class="header">
+        <div class="header-container">
+            <div class="logo-section">
+                <h1 class="site-logo">
+                    <i class="fas fa-shopping-basket"></i>
+                    <a href="/app">{{appName}}</a>
+                </h1>
+            </div>
+            
+            <div class="header-actions">
+                <button onclick="history.back()" class="back-btn">
+                    <i class="fas fa-arrow-left"></i> Back
+                </button>
+                <div class="cart-info">
+                    <i class="fas fa-shopping-cart"></i>
+                    <span class="cart-count">0</span>
+                </div>
+                {{> github-link}}
+            </div>
+        </div>
+    </header>
+
+    <!-- Product Details -->
+    <main class="product-container">
+        <article class="product-detail">
+            <figure class="product-image-section">
+                <div class="product-main-image">
+                    <!-- Emoji standing in for a product image -->
+                    <span class="product-emoji">{{productImage}}</span>
+                </div>
+            </figure>
+
+            <div class="product-info-section" data-product-id="{{product.id}}" data-product-category="{{product.category}}">
+                <header class="product-header">
+                    <h2 class="product-title">{{product.name}}</h2>
+                    {{#if product.brand}}
+                        <p class="product-brand">By {{product.brand}}</p>
+                    {{/if}}
+                    
+                    <div class="product-badges">
+                        <span class="category-badge">{{product.category}}</span>
+                        {{#if product.subCategory}}
+                            <span class="subcategory-badge">{{product.subCategory}}</span>
+                        {{/if}}
+                        {{#if product.type}}
+                            <span class="type-badge">{{product.type}}</span>
+                        {{/if}}
+                    </div>
+                </header>
+
+            <section class="product-rating" aria-label="Product Rating">
+                    {{#if product.rating}}
+                        <div class="rating-stars">
+                            {{#repeat product.rating}}⭐{{/repeat}}
+                            <span class="rating-text">{{product.rating}}/5</span>
+                        </div>
+                    {{/if}}
+            </section>
+
+            <section class="product-pricing" aria-label="Pricing Information">
+                    <div class="price-section">
+                        <data class="current-price" value="{{product.salePrice}}">₹{{product.salePrice}}</data>
+                        
+                    </div>
+                    {{#if product.isOnSale}}
+                        <div class="sale-banner">🔥 On sale!</div>
+                    {{/if}}
+            </section>
+
+                {{#if product.description}}
+                    <section class="product-description" aria-labelledby="description-heading">
+                        <h3 id="description-heading">Description</h3>
+                        <p>{{product.description}}</p>
+                    </section>
+                {{/if}}
+
+                <form class="product-actions" aria-label="Add to Cart">
+                    <fieldset class="quantity-section">
+                        <legend>Quantity:</legend>
+                        <div class="quantity-controls">
+                            <button type="button" class="quantity-btn" data-quantity-change="-1">-</button>
+                            <input type="number" id="quantity" value="1" min="1" max="10" aria-label="Quantity">
+                            <button type="button" class="quantity-btn" data-quantity-change="1">+</button>
+                        </div>
+                    </fieldset>
+                    
+                    <button type="submit" class="add-to-cart-btn">
+                        <i class="fas fa-shopping-cart"></i>
+                        Add to cart
+                    </button>
+                </form>
+            </div>
+        </article>
+
+        <!-- Related Products Section -->
+        <aside class="related-products" aria-labelledby="related-heading">
+            <h3 id="related-heading">You might also like</h3>
+            <div id="related-products-grid" class="products-grid" role="list">
+                <!-- Related products will be loaded here -->
+            </div>
+
+            <!-- Cards in the related products grid -->
+            <template id="related-product-template">
+                <div class="product-card" role="listitem">
+                    <div class="product-image">
+                        <span class="product-emoji"></span>
+                    </div>
+                    <div class="product-info">
+                        <h4></h4>
+                        <p class="product-price"></p>
+                        <a class="view-btn">View product</a>
+                    </div>
+                </div>
+            </template>
+
+            <template id="related-placeholder-template">
+                <div class="placeholder-message">
+                    <p>Related products feature coming soon!</p>
+                </div>
+            </template>
+        </aside>
+    </main>
+
+    {{> site-footer}}
+
+    <!-- Success/Error Messages -->
+    <div id="notification-container"></div>
+
+    <script src="/javascripts/product-details-page.js" type="module"></script>
+</body>
+</html>

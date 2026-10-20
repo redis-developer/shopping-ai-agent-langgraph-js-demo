@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>{{appName}} - Instant groceries, smarter shopping</title>
+    <link rel="stylesheet" href="./stylesheets/chat.css" media="screen,print" >
+    <link rel="icon" href="images/redis-avatar.png" type="image/png">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+    <!-- Primary Meta Tags -->
+    <meta name="title" content="{{appName}} - Instant groceries, smarter shopping">
+    <meta name="description" content="Ask for a recipe or a vibe, and get products and groceries to match, with an AI shopping assistant powered by Redis.">
+    <meta name="keywords" content="Groceries, Shopping, AI assistant, Redis, Recipes">
+
+    <meta property="title" content="{{appName}}">
+    <meta property="description" content="Ask for a recipe or a vibe, and get products and groceries to match, with an AI shopping assistant powered by Redis.">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{githubUrl}}">
+    <meta property="og:title" content="{{appName}} - Instant groceries, smarter shopping">
+    <meta property="og:description" content="Ask for a recipe or a vibe, and get products and groceries to match, with an AI shopping assistant powered by Redis.">
+    <meta property="og:image" content="{{githubUrl}}/raw/main/docs/screenshots/home-screen.png">
+
+    <!-- Import Maps for Client-Side Module Resolution -->
+    <script type="importmap">
+    {
+        "imports": {
+            "@components/": "/javascripts/components/",
+            "@services/": "/javascripts/services/",
+            "@utils/": "/javascripts/utils/"
+        }
+    }
+    </script>
+</head>
+<body class="neo-brutalist-theme chat-page">
+    <div class="app-layout">
+    <div class="main-column">
+    <!-- Main Shopping Website -->
+    <header class="header">
+        <div class="header-container">
+            <div class="logo-section">
+                <h1 class="site-logo">
+                    <i class="fas fa-shopping-basket"></i>
+                    {{appName}}
+                </h1>
+            </div>
+            
+            <div class="search-bar">
+                <input type="text" placeholder="Search for groceries..." class="main-search">
+                <button class="search-btn"><i class="fas fa-search"></i></button>
+            </div>
+            
+            <div class="header-actions">
+                <div class="user-info">
+                    <i class="fas fa-user-circle"></i>
+                    <span id="username-display">Hello, user</span>
+                </div>
+                <div class="cart-info">
+                    <i class="fas fa-shopping-cart"></i>
+                    <span class="cart-count">0</span>
+                </div>
+                {{> github-link}}
+            </div>
+        </div>
+    </header>
+
+    <main class="canvas">
+    <div id="canvas-home">
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <div class="hero-content">
+            <h2>🥕 Instant groceries, smarter shopping</h2>
+            <p>Ask for a recipe or a vibe, and get products and groceries to match</p>
+            <div class="hero-features">
+                <div class="feature">
+                    <i class="fas fa-robot"></i>
+                    <span>AI shopping assistant</span>
+                </div>
+                <div class="feature">
+                    <i class="fas fa-bolt"></i>
+                    <span>Search in a blink</span>
+                </div>
+                <div class="feature">
+                    <i class="fas fa-heart"></i>
+                    <span>Shop by craving</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Product Categories -->
+    <section class="categories-section">
+        <h3>Shop by category</h3>
+        <div class="categories-grid">
+            <div class="category-card">
+                <i class="fas fa-apple-alt"></i>
+                <span>Fruits & vegetables</span>
+            </div>
+            <div class="category-card">
+                <i class="fas fa-bread-slice"></i>
+                <span>Bakery & dairy</span>
+            </div>
+            <div class="category-card">
+                <i class="fas fa-fish"></i>
+                <span>Meat & seafood</span>
+            </div>
+            <div class="category-card">
+                <i class="fas fa-seedling"></i>
+                <span>Grains & pulses</span>
+            </div>
+            <div class="category-card">
+                <i class="fas fa-cookie"></i>
+                <span>Snacks & beverages</span>
+            </div>
+            <div class="category-card">
+                <i class="fas fa-pump-soap"></i>
+                <span>Household items</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Featured Products -->
+    <section class="featured-section">
+        <h3>Today's fresh picks</h3>
+        <div class="products-grid">
+            <div class="product-card">
+                <div class="product-image">🥬</div>
+                <div class="product-info">
+                    <h4>Fresh lettuce</h4>
+                    <p class="product-price">₹45 <span class="old-price">₹60</span></p>
+                    <button class="add-btn">Add to cart</button>
+                </div>
+            </div>
+            <div class="product-card">
+                <div class="product-image">🍅</div>
+                <div class="product-info">
+                    <h4>Organic tomatoes</h4>
+                    <p class="product-price">₹35</p>
+                    <button class="add-btn">Add to cart</button>
+                </div>
+            </div>
+            <div class="product-card">
+                <div class="product-image">🥛</div>
+                <div class="product-info">
+                    <h4>Fresh milk</h4>
+                    <p class="product-price">₹65</p>
+                    <button class="add-btn">Add to cart</button>
+                </div>
+            </div>
+        </div>
+    </section>
+    </div>
+
+    <!-- Product details (the product page, shown in place of the sections above) -->
+    <div id="product-view" class="product-view" hidden>
+        <button type="button" id="close-product-view" class="product-view-back">
+            <i class="fas fa-arrow-left"></i> Back to shopping
+        </button>
+        <iframe id="product-frame" class="product-frame" title="Product details"></iframe>
+    </div>
+    </main>
+    {{> site-footer}}
+    </div>
+
+    <!-- Chat Assistant (docked) -->
+    <aside class="chat-assistant" id="chat-assistant">
+            <div class="chat-header">
+                <div class="assistant-info">
+                    <div class="assistant-avatar">🤖</div>
+                    <div>
+                        <h4>Shopping assistant</h4>
+                        <span class="status">Online • Ready to help!</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chat-content">
+                <div id="chat-messages" class="chat-messages">
+                    <div class="welcome-message">
+                        <div class="assistant-avatar">🤖</div>
+                        <div class="message-content">
+                            <p>Hi there! 👋 I'm your shopping assistant!</p>
+                            <p>I can help you with:</p>
+                            <ul>
+                                <li>🥘 Recipe Ingredients</li>
+                                <li>🔍 Finding Products</li>
+                                <li>🛒 Managing Your Cart</li>
+                                <li>💡 Cooking Suggestions</li>
+                            </ul>
+                            <p>What would you like to cook today?</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Product card shown in assistant messages -->
+                <template id="product-card-template">
+                    <div class="chat-product-card">
+                        <div class="chat-product-top">
+                            <span class="chat-product-image"></span>
+                            <a class="chat-product-name"></a>
+                        </div>
+                        <div class="chat-product-bottom">
+                            <div class="chat-product-meta">
+                                <span class="price"></span>
+                                <span class="chat-product-rating"></span>
+                            </div>
+                            <button type="button" class="add-btn chat-product-add" title="Add to cart">🛒 Add</button>
+                        </div>
+                    </div>
+                </template>
+
+                <!-- Messages in the chat -->
+                <template id="user-message-template">
+                    <div class="message user-message">
+                        <div class="message-content user-content">
+                            <div class="message-text"></div>
+                            <div class="message-time"></div>
+                        </div>
+                        <div class="user-avatar">👤</div>
+                    </div>
+                </template>
+
+                <template id="assistant-message-template">
+                    <div class="message assistant-message">
+                        <div class="assistant-avatar">🤖</div>
+                        <div class="message-content assistant-content">
+                            <div class="message-text"></div>
+                            <div class="message-time"></div>
+                        </div>
+                    </div>
+                </template>
+
+                <!-- Usage breakdown shown in an assistant message -->
+                <template id="response-info-template">
+                    <div class="response-info">
+                        <details>
+                            <summary>Usage breakdown</summary>
+                            <p class="cached-message">This seems familiar, so we've pulled in an earlier response. No waiting in line!</p>
+                            <ul></ul>
+                            <p class="no-model-calls-message">No model calls were needed for this turn.</p>
+                        </details>
+                    </div>
+                </template>
+
+                <template id="typing-indicator-template">
+                    <div class="message typing-indicator">
+                        <div class="assistant-avatar">🤖</div>
+                        <div class="message-content typing-content">
+                            <div class="typing-dots">
+                                <span></span><span></span><span></span>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+
+                <template id="new-chat-message-template">
+                    <div class="welcome-message">
+                        <div class="assistant-avatar">🤖</div>
+                        <div class="message-content">
+                            <p>New chat started! 🎉</p>
+                            <p>I can help you with:</p>
+                            <ul>
+                                <li>🥘 Recipe ingredients</li>
+                                <li>🔍 Finding products</li>
+                                <li>🛒 Managing your cart</li>
+                                <li>💡 Cooking suggestions</li>
+                            </ul>
+                            <p>What would you like to cook today?</p>
+                        </div>
+                    </div>
+                </template>
+
+                <form id="chat-form" class="chat-input-form">
+                    <div class="lookup-toggle-row">
+                        <label class="lookup-toggle">
+                            <input type="checkbox" id="lookup-similar-responses-toggle" checked>
+                            <span class="toggle-slider"></span>
+                            <span class="toggle-label">Look-up similar responses</span>
+                        </label>
+                        <span class="info-icon" role="img" aria-label="Reuse earlier answers to similar questions from semantic cache for faster replies and fewer tokens" title="Reuse earlier answers to similar questions from semantic cache for faster replies and fewer tokens">ℹ️</span>
+                    </div>
+                    <div class="input-container">
+                        <input 
+                            type="text" 
+                            id="chat-input" 
+                            placeholder="Ask about recipes, ingredients, or products..." 
+                            autocomplete="off" 
+                            required 
+                        />
+                        <button type="submit" class="send-btn">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                    <div class="quick-suggestions">
+                        <button type="button" class="suggestion-btn" data-text="What ingredients do I need for pasta?">
+                            🍝 Pasta ingredients
+                        </button>
+                        <button type="button" class="suggestion-btn" data-text="Show me fresh vegetables">
+                            🥬 Fresh vegetables
+                        </button>
+                        <button type="button" class="suggestion-btn" data-text="What's in my cart?">
+                            🛒 View my cart
+                        </button>
+                    </div>
+                </form>
+            </div>
+    </aside>
+    </div>
+
+    <script src="/javascripts/home-page.js" type="module"></script>
+    
+</body>
+</html>

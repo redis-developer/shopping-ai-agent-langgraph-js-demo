@@ -4,9 +4,25 @@
   "description": "Shopping AI Agent demo that uses Redis's speed for personalized recipe recommendations, smart product suggestions, and lightning-fast responses through semantic caching",
   "private": true,
   "workspaces": [
-    "openai-version",
-    "aws-bedrock-version"
+    "src/modules/ai/providers/*"
   ],
+  "type": "module",
+  "engines": {
+    "node": ">=24.0.0",
+    "npm": ">=10.0.0"
+  },
+  "imports": {
+    "#modules/*": "./src/modules/*",
+    "#lib/*": "./src/lib/*",
+    "#config": "./src/config.js"
+  },
+  "scripts": {
+    "start": "node src/index.js",
+    "load-products": "node src/scripts/load-products.js",
+    "debug-config": "node src/scripts/debug-config.js",
+    "install:openai": "npm install --include-workspace-root --workspace=@redish/ai-provider-openai",
+    "install:aws-bedrock": "npm install --include-workspace-root --workspace=@redish/ai-provider-aws-bedrock"
+  },
   "keywords": [
     "redis",
     "shopping",
@@ -22,6 +38,21 @@
   ],
   "author": "Ashwin Hariharan",
   "license": "MIT",
+  "dependencies": {
+    "@langchain/core": "^1.2.18",
+    "@langchain/langgraph": "^1.5.0",
+    "@redis-ai/langcache": "^0.12.1",
+    "@redis-iris/agent-memory": "^0.3.1",
+    "cookie-parser": "~1.4.7",
+    "csv-parse": "^7.0.3",
+    "dotenv": "18.0.8",
+    "express": "~5.3.0",
+    "express-handlebars": "^9.0.2",
+    "hbs": "~4.3.1",
+    "langsmith": "^0.11.0",
+    "morgan": "~1.12.1",
+    "redis": "^6.3.0"
+  },
   "devDependencies": {
     "concurrently": "^8.2.2"
   }
