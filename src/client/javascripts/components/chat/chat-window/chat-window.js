@@ -13,7 +13,7 @@ export class ChatWindow {
     /**
      * @param {string} message - The message text.
      * @param {'user' | 'assistant'} sender
-     * @param {Object} [details] - Assistant response details: isCachedResponse, responseTime, usage, foundProducts.
+     * @param {Object} [details] - Assistant response details: isCachedResponse, responseTime, usage, attachments.
      */
     addMessage(message, sender, details = {}) {
         if (!this.messagesContainer) return;

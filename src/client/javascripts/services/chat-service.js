@@ -7,7 +7,7 @@ export let CHATS = {}; // In-memory store of sessionId → messages
  * @property {boolean} [isCached] - Whether the message came from cache.
  * @property {number|string} [responseTime] - Response time (optional).
  * @property {Object} [usage] - Token usage for this response (input, output, total and detail counts).
- * @property {Array<{id: string, name: string, price: number, image: string, rating: number}>} [foundProducts] - Products shown as cards with this response.
+ * @property {Array<{type: 'productSummary', data: {id: string, name: string, price: number, image: string, rating: number}}>} [attachments] - Content shown with this response, such as product cards.
  */
 
 export const chatData = {
@@ -84,7 +84,7 @@ export async function sendChatMessage(userId, sessionId, message, options = {}) 
             content: data.content,
             isCachedResponse: data.isCachedResponse,
             usage: data.usage,
-            foundProducts: data.foundProducts,
+            attachments: data.attachments,
             responseTime
         }
         chatData.addMessage(sessionId, chatMessageObject);

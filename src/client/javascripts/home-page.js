@@ -93,7 +93,7 @@ export class ShoppingApp {
                 this.chatWindow.hideTypingIndicator();
                 this.chatWindow.addMessage(chatMessage.content, 'assistant', chatMessage);
 
-                if (chatMessage.foundProducts?.length && !this.cartCountLoaded) {
+                if (chatMessage.attachments?.length && !this.cartCountLoaded) {
                     this.cartCount.load(this.userId);
                     this.cartCountLoaded = true;
                 }

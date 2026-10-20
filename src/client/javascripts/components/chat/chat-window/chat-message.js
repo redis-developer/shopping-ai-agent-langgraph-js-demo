@@ -5,7 +5,7 @@ export class ChatMessage {
     /**
      * @param {string} message - The message text.
      * @param {'user' | 'assistant'} sender
-     * @param {Object} [details] - Assistant response details: isCachedResponse, responseTime, usage, foundProducts.
+     * @param {Object} [details] - Assistant response details: isCachedResponse, responseTime, usage, attachments.
      * @param {(productId: string, buttonElement: HTMLElement) => void} [onProductAction] - Called when a product card's add button is clicked.
      * @param {(productId: string) => void} [onProductOpen] - Called when a product card is clicked.
      */
@@ -15,18 +15,21 @@ export class ChatMessage {
         this.isCached = details.isCachedResponse || false;
         this.responseTime = details.responseTime ?? null;
         this.usage = details.usage || null;
-        this.foundProducts = details.foundProducts || [];
+        this.attachments = details.attachments || [];
         this.onProductAction = onProductAction;
         this.onProductOpen = onProductOpen;
     }
 
     createProductCards() {
-        if (this.foundProducts.length === 0) return null;
+        const productSummaries = this.attachments
+            .filter((attachment) => attachment.type === 'productSummary')
+            .map((attachment) => attachment.data);
+        if (productSummaries.length === 0) return null;
 
         const list = document.createElement('div');
         list.className = 'chat-product-list';
 
-        this.foundProducts.forEach((product) => {
+        productSummaries.forEach((product) => {
             const card = document.getElementById(DOM_IDS.PRODUCT_CARD_TEMPLATE).content.firstElementChild.cloneNode(true);
             card.querySelector('.chat-product-image').textContent = product.image;
             card.querySelector('.chat-product-name').textContent = product.name;

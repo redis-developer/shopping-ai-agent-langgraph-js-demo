@@ -12,14 +12,15 @@
     "npm": ">=10.0.0"
   },
   "imports": {
-    "#modules/*": "./src/modules/*",
-    "#lib/*": "./src/lib/*",
-    "#config": "./src/config.js"
+    "#modules/*": "./src/modules/*.ts",
+    "#lib/*": "./src/lib/*.ts",
+    "#config": "./src/config.ts"
   },
   "scripts": {
-    "start": "node src/index.js",
-    "load-products": "node src/scripts/load-products.js",
-    "debug-config": "node src/scripts/debug-config.js",
+    "start": "node src/index.ts",
+    "load-products": "node src/scripts/load-products.ts",
+    "debug-config": "node src/scripts/debug-config.ts",
+    "typecheck": "tsc --noEmit",
     "install:openai": "npm install --include-workspace-root --workspace=@redish/ai-provider-openai",
     "install:aws-bedrock": "npm install --include-workspace-root --workspace=@redish/ai-provider-aws-bedrock"
   },
@@ -54,6 +55,11 @@
     "redis": "^6.3.0"
   },
   "devDependencies": {
-    "concurrently": "^8.2.2"
+    "@types/cookie-parser": "^1.4.10",
+    "@types/express": "^5.0.6",
+    "@types/morgan": "^1.9.10",
+    "@types/node": "^24.19.2",
+    "concurrently": "^8.2.2",
+    "typescript": "^7.0.2"
   }
 }
