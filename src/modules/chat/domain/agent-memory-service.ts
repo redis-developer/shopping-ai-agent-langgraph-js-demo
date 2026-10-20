@@ -15,6 +15,14 @@ export async function getWorkingMemory(sessionId: string) {
 }
 
 /**
+ * List the IDs of a user's sessions
+ * @param userId - User ID
+ */
+export async function listSessionIds(userId: string) {
+    return memoryRepository.listSessionIds(userId);
+}
+
+/**
  * Save one conversation turn (the user's message and the assistant's reply) to a session
  * @param sessionId - Session ID
  * @param userId - User ID

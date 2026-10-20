@@ -24,6 +24,10 @@ export class SessionManager {
         }
     }
 
+    switchSession(sessionId) {
+        this.sessionService.switchSession(sessionId);
+    }
+
     getSessionId() {
         return this.sessionService.getSessionId();
     }

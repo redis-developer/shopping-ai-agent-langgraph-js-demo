@@ -5,7 +5,7 @@ export class ChatMessage {
     /**
      * @param {string} message - The message text.
      * @param {'user' | 'assistant'} sender
-     * @param {Object} [details] - Assistant response details: isCachedResponse, responseTime, usage, attachments.
+     * @param {Object} [details] - Assistant response details: isCachedResponse, responseTime, usage, createdAt, attachments.
      * @param {(productId: string, buttonElement: HTMLElement) => void} [onProductAction] - Called when a product card's add button is clicked.
      * @param {(productId: string) => void} [onProductOpen] - Called when a product card is clicked.
      */
@@ -15,6 +15,7 @@ export class ChatMessage {
         this.isCached = details.isCachedResponse || false;
         this.responseTime = details.responseTime ?? null;
         this.usage = details.usage || null;
+        this.createdAt = details.createdAt ? new Date(details.createdAt) : new Date();
         this.attachments = details.attachments || [];
         this.onProductAction = onProductAction;
         this.onProductOpen = onProductOpen;
@@ -94,7 +95,7 @@ export class ChatMessage {
         messageDiv.querySelector('.message-text').innerHTML = MessageFormatter.formatMessage(this.message);
 
         const time = messageDiv.querySelector('.message-time');
-        time.textContent = MessageFormatter.formatTimestamp(new Date());
+        time.textContent = MessageFormatter.formatTimestamp(this.createdAt);
 
         // Product cards and the usage breakdown go between the reply text and the time
         if (!isUser) {

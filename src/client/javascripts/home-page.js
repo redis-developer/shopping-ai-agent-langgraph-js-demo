@@ -1,8 +1,9 @@
-import { sendChatMessage } from '@services/chat-service.js';
+import { sendChatMessage, fetchSessionMessages } from '@services/chat-service.js';
 import { DOM_IDS, CSS_SELECTORS } from '@utils/constants.js';
 
 import { ChatWindow } from '@components/chat/chat-window/chat-window.js';
 import { ChatInput } from '@components/chat/chat-input/chat-input.js';
+import { ContextPanel } from '@components/chat/context-panel/context-panel.js';
 import { SuggestionButtons } from '@components/chat/chat-input/suggestion-buttons.js';
 
 import { CartCount } from '@components/cart/cart-count.js';
@@ -54,6 +55,11 @@ export class ShoppingApp {
             DOM_IDS.CHAT_MESSAGES,
             (productId, buttonElement) => this.handleProductAction(productId, buttonElement),
             (productId) => this.productView.open(productId)
+        );
+
+        this.contextPanel = new ContextPanel(
+            () => ({ userId: this.userId, sessionId: this.sessionId }),
+            (sessionId) => this.loadSession(sessionId)
         );
 
         this.chatInput = new ChatInput(
@@ -119,6 +125,28 @@ export class ShoppingApp {
 
     handleCartError(error) {
         NotificationSystem.error('Failed to add to cart. Please try again.');
+    }
+
+    async loadSession(sessionId) {
+        if (sessionId !== this.sessionId) {
+            try {
+                const { messages } = await fetchSessionMessages(sessionId);
+
+                this.sessionManager.switchSession(sessionId);
+                this.sessionId = sessionId;
+
+                this.chatWindow.clear();
+                messages.forEach((message) => {
+                    this.chatWindow.addMessage(message.content, message.role === 'user' ? 'user' : 'assistant', message);
+                });
+            } catch (error) {
+                console.error('Error loading the session:', error);
+                NotificationSystem.error('Could not load that session. Please try again.');
+                return;
+            }
+        }
+
+        this.contextPanel.showChat();
     }
 
     handleNewChat() {

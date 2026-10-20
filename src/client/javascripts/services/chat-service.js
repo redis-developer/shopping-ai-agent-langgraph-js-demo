@@ -52,6 +52,35 @@ export const chatData = {
  * @param {(error: any) => void} [options.onError]      - called on fetch or server error
  * @param {boolean} [options.lookupSimilarResponses]      - whether to look up similar responses in the semantic cache (default: true)
  */
+async function getJson(url) {
+    const res = await fetch(url);
+    if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || 'Unknown error');
+    }
+    return res.json();
+}
+
+/**
+ * Gets what the assistant knows about the shopper: saved preferences, the summary of the
+ * current session, and the latest earlier sessions.
+ * @param {string} userId
+ * @param {string} sessionId - The current session.
+ * @returns {Promise<{preferences: string[], conversationSummary: string|null, sessions: Array<{sessionId: string, title: string, startedAt?: string}>}>}
+ */
+export function fetchChatContext(userId, sessionId) {
+    return getJson(`/api/ai/chat/context?${new URLSearchParams({ userId, sessionId })}`);
+}
+
+/**
+ * Gets the messages of one of the shopper's earlier sessions.
+ * @param {string} sessionId
+ * @returns {Promise<{messages: Array<{role: string, content: string, createdAt?: string, attachments?: Array}>, summary: string|null}>}
+ */
+export function fetchSessionMessages(sessionId) {
+    return getJson(`/api/ai/chat/sessions/${encodeURIComponent(sessionId)}`);
+}
+
 export async function sendChatMessage(userId, sessionId, message, options = {}) {
     const { onLoad, onSuccess, onError, lookupSimilarResponses = true } = options;
 

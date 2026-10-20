@@ -37,6 +37,11 @@ export class SessionService {
         };
     }
 
+    switchSession(sessionId) {
+        this.sessionId = sessionId;
+        localStorage.setItem('shopping-session-id', sessionId);
+    }
+
     getSessionId() {
         return this.sessionId;
     }

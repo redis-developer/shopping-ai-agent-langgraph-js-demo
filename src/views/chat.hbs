@@ -179,7 +179,12 @@
                 </div>
             </div>
 
-            <div class="chat-content">
+            <nav class="chat-tabs" aria-label="Assistant views">
+                <button type="button" id="chat-tab" class="chat-tab active" aria-current="true" aria-controls="chat-content">Chat</button>
+                <button type="button" id="context-tab" class="chat-tab" aria-controls="context-panel">Context</button>
+            </nav>
+
+            <section class="chat-content" id="chat-content" aria-label="Chat">
                 <div id="chat-messages" class="chat-messages">
                     <div class="welcome-message">
                         <div class="assistant-avatar">🤖</div>
@@ -308,7 +313,35 @@
                         </button>
                     </div>
                 </form>
-            </div>
+            </section>
+
+            <!-- What the assistant knows about the shopper, and the earlier sessions to continue -->
+            <section class="context-panel" id="context-panel" aria-label="Context" hidden>
+                <section class="context-section">
+                    <h5>Saved preferences</h5>
+                    <ul id="context-preferences" class="context-list"></ul>
+                    <p class="context-empty">Nothing saved yet. Tell me a diet or a preference and I'll remember it.</p>
+                </section>
+                <section class="context-section">
+                    <h5>Summary of this session</h5>
+                    <p id="context-summary" class="context-summary"></p>
+                    <p class="context-empty">The summary appears once the conversation gets long.</p>
+                </section>
+                <section class="context-section">
+                    <h5>Sessions</h5>
+                    <ul id="context-sessions" class="context-list"></ul>
+                    <p class="context-empty">No sessions yet.</p>
+                </section>
+
+                <template id="context-session-template">
+                    <li>
+                        <button type="button" class="context-session">
+                            <span class="context-session-title"></span>
+                            <time class="context-session-time"></time>
+                        </button>
+                    </li>
+                </template>
+            </section>
     </aside>
     </div>
 

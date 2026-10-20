@@ -3,7 +3,7 @@ import { AgentMemory } from '@redis-iris/agent-memory';
 import CONFIG from '#config';
 import type { Attachment } from '#modules/chat/domain/attachments';
 
-export type SessionMessage = { role: string; content: string; attachments?: Attachment[] };
+export type SessionMessage = { role: string; content: string; createdAt?: Date; attachments?: Attachment[] };
 
 type LongTermMemoryInput = {
     id?: string;
@@ -60,6 +60,7 @@ class MemoryRepository {
             const messages = (session.events || []).map((event) => ({
                 role: String(event.role).toLowerCase(),
                 content: (event.content || []).map((part) => part.text).join('\n'),
+                createdAt: event.createdAt,
                 attachments: event.metadata?.attachments
             }));
             const summary = session.summary?.text || null;
@@ -77,6 +78,15 @@ class MemoryRepository {
             }
             return { messages: [], summary: null };
         }
+    }
+
+    /**
+     * List the IDs of a user's sessions
+     * @param userId - Owner of the sessions
+     */
+    async listSessionIds(userId: string): Promise<string[]> {
+        const result = await this.client.listSessions(100, undefined, userId);
+        return result.items;
     }
 
     /**
