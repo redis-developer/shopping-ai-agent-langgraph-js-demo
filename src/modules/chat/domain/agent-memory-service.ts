@@ -1,5 +1,5 @@
 import memoryRepository from '../data/agent-memory-repository.ts';
-import type { Attachment } from '#modules/chat/domain/attachments';
+import type { Attachment } from './attachments.ts';
 
 // The custom memory type and its fields, as configured in the Agent Memory service
 // (see the Redis Agent Memory setup in the main README). The topics are the type's field names.

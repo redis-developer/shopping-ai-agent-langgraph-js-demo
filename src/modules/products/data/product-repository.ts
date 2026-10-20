@@ -1,4 +1,4 @@
-import { getRedisClient } from '#modules/db/redis-client';
+import { getRedisClient } from '../../db/redis-client.ts';
 
 /** A product as stored in Redis. The vector search only returns some of the fields. */
 export type Product = {

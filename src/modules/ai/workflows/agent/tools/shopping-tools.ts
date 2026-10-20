@@ -4,8 +4,8 @@ import { HumanMessage } from "@langchain/core/messages";
 import { z } from "zod";
 
 // Import service functions
-import { findProductsForIngredients, searchProducts } from '#modules/products/domain/product-service';
-import { addItemsToCart, getCart, clearCart } from '#modules/cart/domain/cart-service';
+import { findProductsForIngredients, searchProducts } from '../../../../products/domain/product-service.ts';
+import { addItemsToCart, getCart, clearCart } from '../../../../cart/domain/cart-service.ts';
 import { createChatModel } from '../../../providers/index.ts';
 
 const recipeIngredientsSchema = z.object({

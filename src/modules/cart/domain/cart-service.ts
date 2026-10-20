@@ -1,6 +1,6 @@
 import CartRepository from '../data/cart-repository.ts';
 import type { CartItem } from '../data/cart-repository.ts';
-import ProductRepository from '#modules/products/data/product-repository';
+import ProductRepository from '../../products/data/product-repository.ts';
 
 const cartRepository = new CartRepository();
 const productRepository = new ProductRepository();

@@ -1,5 +1,5 @@
-import { runShoppingAgentWorkflow } from '#modules/ai/workflows/agent/index';
-import { getWorkingMemory, listSessionIds, searchShopperPreferences } from '#modules/chat/domain/agent-memory-service';
+import { runShoppingAgentWorkflow } from '../../ai/workflows/agent/index.ts';
+import { getWorkingMemory, listSessionIds, searchShopperPreferences } from './agent-memory-service.ts';
 
 // How many of the shopper's latest sessions the context lists
 const MAX_LISTED_SESSIONS = 10;

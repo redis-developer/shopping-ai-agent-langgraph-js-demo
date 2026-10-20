@@ -1,17 +1,17 @@
-import CONFIG from '#config';
+import CONFIG from '../../../config.ts';
 
 // Each AI provider is its own workspace package, and only the chosen one is loaded.
-// The package names are written out in full (not built from a variable) so that tools which
-// bundle the app, such as Vercel, can find the packages and include them.
+// The paths are written out in full (not built from a variable) so that tools which compile or
+// bundle the app, such as Vercel, can find the providers and include them.
 const PROVIDERS: Record<string, { packageName: string; load: () => Promise<any>; settings: object }> = {
     'openai': {
         packageName: '@redish/ai-provider-openai',
-        load: () => import('@redish/ai-provider-openai'),
+        load: () => import('./openai/index.ts'),
         settings: CONFIG.openai,
     },
     'aws-bedrock': {
         packageName: '@redish/ai-provider-aws-bedrock',
-        load: () => import('@redish/ai-provider-aws-bedrock'),
+        load: () => import('./aws-bedrock/index.ts'),
         settings: CONFIG.awsBedrock,
     },
 };

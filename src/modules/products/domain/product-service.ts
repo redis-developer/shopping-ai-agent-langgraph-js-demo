@@ -1,7 +1,7 @@
 import ProductRepository from '../data/product-repository.ts';
 import type { Product } from '../data/product-repository.ts';
-import { AppError, ErrorType } from '#lib/errors';
-import { embed } from '#modules/ai/providers/index';
+import { AppError, ErrorType } from '../../../lib/errors.ts';
+import { embed } from '../../ai/providers/index.ts';
 
 const productRepository = new ProductRepository();
 

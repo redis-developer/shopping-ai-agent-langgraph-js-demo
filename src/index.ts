@@ -5,15 +5,15 @@ import cookieParser from 'cookie-parser';
 import logger from 'morgan';
 import { create } from 'express-handlebars';
 
-import CONFIG from '#config';
-import { handleError } from '#lib/errors';
+import CONFIG from './config.ts';
+import { handleError } from './lib/errors.ts';
 
-import indexRouter from '#modules/index-routes';
+import indexRouter from './modules/index-routes.ts';
 // Module-based routes
-import cartRouter from '#modules/cart/api/cart-routes';
-import chatRouter from '#modules/chat/api/chat-routes';
-import productApiRouter from '#modules/products/api/product-routes';
-import productPagesRouter from '#modules/products/api/product-pages';
+import cartRouter from './modules/cart/api/cart-routes.ts';
+import chatRouter from './modules/chat/api/chat-routes.ts';
+import productApiRouter from './modules/products/api/product-routes.ts';
+import productPagesRouter from './modules/products/api/product-pages.ts';
 
 import { fileURLToPath } from 'url';
 

@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { AgentMemory } from '@redis-iris/agent-memory';
-import CONFIG from '#config';
-import type { Attachment } from '#modules/chat/domain/attachments';
+import CONFIG from '../../../config.ts';
+import type { Attachment } from '../domain/attachments.ts';
 
 export type SessionMessage = { role: string; content: string; createdAt?: Date; attachments?: Attachment[] };
 

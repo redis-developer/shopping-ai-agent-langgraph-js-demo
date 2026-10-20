@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { getProductById } from '../domain/product-service.ts';
-import { HttpStatusCode } from '#lib/errors';
+import { HttpStatusCode } from '../../../lib/errors.ts';
 
 const router = Router();
 

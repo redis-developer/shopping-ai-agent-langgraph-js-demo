@@ -3,7 +3,7 @@
  * Usage: npm run debug-config
  */
 
-import CONFIG from '#config';
+import CONFIG from '../config.ts';
 
 console.log('🔍 Configuration Debug Information\n');
 

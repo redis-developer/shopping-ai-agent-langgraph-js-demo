@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { getProductById, getProductImage } from '../domain/product-service.ts';
-import CONFIG from '#config';
-import { HttpStatusCode } from '#lib/errors';
+import CONFIG from '../../../config.ts';
+import { HttpStatusCode } from '../../../lib/errors.ts';
 
 const router = Router();
 

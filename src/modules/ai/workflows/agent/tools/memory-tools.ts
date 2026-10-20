@@ -1,6 +1,6 @@
 import { tool } from "@langchain/core/tools";
 import { z } from "zod";
-import { getWorkingMemory, searchShopperPreferences, saveShopperPreference, CUSTOM_TOPICS } from "#modules/chat/domain/agent-memory-service";
+import { getWorkingMemory, searchShopperPreferences, saveShopperPreference, CUSTOM_TOPICS } from "../../../../chat/domain/agent-memory-service.ts";
 
 /**
  * Tool: Search My Memories

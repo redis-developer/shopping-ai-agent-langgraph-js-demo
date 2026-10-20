@@ -2,9 +2,9 @@ import { SCHEMA_FIELD_TYPE, SCHEMA_VECTOR_FIELD_ALGORITHM } from 'redis';
 
 import { readFileSync } from 'fs';
 import { parse } from 'csv-parse/sync';
-import { getRedisClient } from '#modules/db/redis-client';
+import { getRedisClient } from '../../db/redis-client.ts';
 
-import { embed, embeddingDimensions } from '#modules/ai/providers/index';
+import { embed, embeddingDimensions } from '../../ai/providers/index.ts';
 
 /**
  * Create the consolidated search index with both text and vector fields
