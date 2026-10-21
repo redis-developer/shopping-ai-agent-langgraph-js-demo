@@ -25,10 +25,9 @@ export class ProductCard {
             this.onProductAdd(productName);
         }
 
-        e.target.style.transform = 'scale(0.95)';
-        setTimeout(() => {
-            e.target.style.transform = 'scale(1)';
-        }, 150);
+        const button = e.currentTarget;
+        button.classList.add('pulse');
+        setTimeout(() => button.classList.remove('pulse'), 150);
     }
 
     handleCategoryClick(e) {

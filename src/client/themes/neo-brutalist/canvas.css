@@ -1,0 +1,239 @@
+/* Canvas: the page content next to the docked chat. Page layout, hero, categories and the product view. */
+
+/* Page layout: the canvas (page content) and the docked chat */
+body.chat-page {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.app-layout {
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 432px;
+}
+
+/* The site header and the canvas share the left column, so the chat runs the full height of the page */
+.main-column {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    container-type: inline-size;
+}
+
+.canvas {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+}
+
+/* Hero Section */
+.hero-section {
+    background: var(--white);
+    border-bottom: var(--border);
+    padding: 3rem 2rem;
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.hero-content h2 {
+    font-family: var(--font-display);
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    font-weight: 400;
+    color: var(--dark);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    line-height: 1.1;
+}
+
+.hero-content p {
+    font-family: var(--font-sans);
+    font-size: 1.2rem;
+    margin-bottom: 2rem;
+    font-weight: 600;
+    color: var(--dark);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.hero-features {
+    list-style: none;
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    flex-wrap: wrap;
+}
+
+.feature {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: var(--accent);
+    color: var(--dark);
+    padding: 1rem 2rem;
+    border: var(--border);
+    font-family: var(--font-sans);
+    font-weight: 700;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    /* box-shadow: var(--shadow); */
+    transition: var(--transition);
+}
+
+/* Categories Section */
+.categories-section, .featured-section {
+    max-width: 1200px;
+    margin: 0 auto 3rem auto;
+    padding: 0 2rem;
+}
+
+.categories-section h3, .featured-section h3 {
+    font-family: var(--font-display);
+    font-size: 2.5rem;
+    text-align: center;
+    margin-bottom: 2rem;
+    color: var(--dark);
+    font-weight: 400;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+.categories-grid {
+    list-style: none;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 2rem;
+}
+
+.category-card {
+    width: 100%;
+    font: inherit;
+    color: inherit;
+    background: var(--white);
+    border: var(--border);
+    box-shadow: var(--shadow);
+    padding: 2rem;
+    text-align: center;
+    cursor: pointer;
+    transition: var(--transition);
+
+    &:hover {
+        box-shadow: var(--shadow-hover);
+        transform: translate(-2px, -2px);
+        background: var(--primary);
+        color: var(--white);
+    }
+
+    & i {
+        font-size: 3rem;
+        color: var(--primary);
+        margin-bottom: 1rem;
+        transition: color 0.1s ease;
+    }
+
+    &:hover i {
+        color: var(--white);
+    }
+
+    & span {
+        font-family: var(--font-sans);
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: var(--dark);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        transition: color 0.1s ease;
+    }
+
+    &:hover span {
+        color: var(--white);
+    }
+}
+
+/* Product details page, shown in the canvas in place of the page sections */
+.product-view {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1rem 2rem;
+
+    &[hidden] {
+        display: none;
+    }
+}
+
+.product-view-back {
+    align-self: flex-start;
+    background: var(--white);
+    border: var(--border);
+    color: var(--dark);
+    padding: 0.5rem 1rem;
+    font-family: var(--font-sans);
+    font-weight: 700;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    cursor: pointer;
+    box-shadow: var(--shadow);
+    transition: var(--transition);
+
+    &:hover {
+        box-shadow: var(--shadow-hover);
+        transform: translate(-2px, -2px);
+    }
+}
+
+.product-frame {
+    flex: 1;
+    width: 100%;
+    border: var(--border);
+    background: var(--white);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .hero-content h2 {
+        font-size: 2rem;
+    }
+
+    .categories-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    body.chat-page {
+        height: auto;
+        overflow: visible;
+    }
+
+    .app-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .canvas {
+        overflow: visible;
+    }
+
+    .product-frame {
+        min-height: 80vh;
+    }
+}
+
+@media (max-width: 480px) {
+    .categories-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .hero-features {
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .feature {
+        justify-content: center;
+    }
+}

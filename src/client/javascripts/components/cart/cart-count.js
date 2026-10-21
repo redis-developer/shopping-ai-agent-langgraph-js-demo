@@ -8,10 +8,8 @@ export class CartCount {
     update(count) {
         if (this.element) {
             this.element.textContent = count || 0;
-            this.element.style.transform = 'scale(1.3)';
-            setTimeout(() => {
-                this.element.style.transform = 'scale(1)';
-            }, 200);
+            this.element.classList.add('pulse');
+            setTimeout(() => this.element.classList.remove('pulse'), 200);
         }
     }
 

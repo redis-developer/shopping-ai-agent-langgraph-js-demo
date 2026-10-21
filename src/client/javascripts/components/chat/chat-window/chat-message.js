@@ -27,7 +27,7 @@ export class ChatMessage {
             .map((attachment) => attachment.data);
         if (productSummaries.length === 0) return null;
 
-        const list = document.createElement('div');
+        const list = document.createElement('ul');
         list.className = 'chat-product-list';
 
         productSummaries.forEach((product) => {
@@ -36,7 +36,9 @@ export class ChatMessage {
             card.querySelector('.chat-product-name').textContent = product.name;
             card.querySelector('.chat-product-name').href = `/products/${product.id}`;
             card.querySelector('.chat-product-rating').textContent = product.rating ? ` · ⭐ ${product.rating}` : '';
-            card.querySelector('.price').textContent = `₹${product.price}`;
+            const price = card.querySelector('.price');
+            price.value = product.price;
+            price.textContent = `₹${product.price}`;
 
             card.querySelector('.chat-product-add').addEventListener('click', async (event) => {
                 await this.onProductAction?.(product.id, event.currentTarget);
@@ -95,6 +97,7 @@ export class ChatMessage {
         messageDiv.querySelector('.message-text').innerHTML = MessageFormatter.formatMessage(this.message);
 
         const time = messageDiv.querySelector('.message-time');
+        time.dateTime = this.createdAt.toISOString();
         time.textContent = MessageFormatter.formatTimestamp(this.createdAt);
 
         // Product cards and the usage breakdown go between the reply text and the time

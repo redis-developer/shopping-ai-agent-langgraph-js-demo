@@ -1,23 +1,8 @@
 /* Neo-Brutalist Product Page Styles */
 
-/* CSS Variables */
+/* The theme's variables apply here too. The product page has a larger shadow. */
 :root {
-    --primary: #FF4438;
-    --secondary: #C796E4;
-    --accent: #DCFF1C;
-    --info: #7FDBFE;
-    --success: #4CAF50;
-    --warning: #FFC107;
-    --danger: #F44336;
-    --dark: #163342;
-    --text: #4C4C4C;
-    --text-muted: #808080;
-    --light: #FAFAFA;
-    --white: #FFFFFF;
-    --border: 3px solid #163342;
     --shadow: 4px 4px 0px 0px #163342;
-    --shadow-hover: 6px 6px 0px 0px #163342;
-    --shadow-active: 2px 2px 0px 0px #163342;
 }
 
 /* Semantic HTML5 Element Resets */
@@ -42,7 +27,7 @@ legend {
 
 /* Font Imports and Base Styles */
 .neo-brutalist-theme {
-    font-family: 'Inter', 'Space Grotesk', sans-serif;
+    font-family: var(--font-page);
     font-weight: 400;
     line-height: 1.4;
     background-color: var(--light);
@@ -80,23 +65,23 @@ legend {
 }
 
 .site-logo {
-    font-family: 'Bebas Neue', cursive;
+    font-family: var(--font-display);
     font-size: 2rem;
     font-weight: 400;
     margin: 0;
     color: var(--dark);
     text-transform: uppercase;
     letter-spacing: 2px;
-}
 
-.site-logo a {
-    color: var(--dark);
-    text-decoration: none;
-}
+    & a {
+        color: var(--dark);
+        text-decoration: none;
+    }
 
-.site-logo i {
-    color: var(--primary);
-    margin-right: 0.5rem;
+    & i {
+        color: var(--primary);
+        margin-right: 0.5rem;
+    }
 }
 
 .header-actions {
@@ -110,24 +95,24 @@ legend {
     border: var(--border);
     color: var(--dark);
     padding: 0.75rem 1.5rem;
-    font-family: 'Inter', sans-serif;
+    font-family: var(--font-sans);
     font-weight: 700;
     font-size: 0.9rem;
     text-transform: uppercase;
     letter-spacing: 1px;
     cursor: pointer;
     box-shadow: var(--shadow);
-    transition: all 0.1s ease;
-}
+    transition: var(--transition);
 
-.back-btn:hover {
-    box-shadow: var(--shadow-hover);
-    transform: translate(-2px, -2px);
-}
+    &:hover {
+        box-shadow: var(--shadow-hover);
+        transform: translate(-2px, -2px);
+    }
 
-.back-btn:active {
-    box-shadow: var(--shadow-active);
-    transform: translate(2px, 2px);
+    &:active {
+        box-shadow: var(--shadow-active);
+        transform: translate(2px, 2px);
+    }
 }
 
 .cart-info {
@@ -200,7 +185,7 @@ legend {
 }
 
 .product-title {
-    font-family: 'Bebas Neue', cursive;
+    font-family: var(--font-display);
     font-size: 3rem;
     font-weight: 400;
     color: var(--dark);
@@ -211,7 +196,7 @@ legend {
 }
 
 .product-brand {
-    font-family: 'Inter', sans-serif;
+    font-family: var(--font-sans);
     font-size: 1rem;
     font-weight: 700;
     color: var(--text);
@@ -234,7 +219,7 @@ legend {
     color: var(--white);
     padding: 0.5rem 1rem;
     border: var(--border);
-    font-family: 'Inter', sans-serif;
+    font-family: var(--font-sans);
     font-weight: 700;
     font-size: 0.8rem;
     text-transform: uppercase;
@@ -268,7 +253,7 @@ legend {
 }
 
 .rating-text {
-    font-family: 'Inter', sans-serif;
+    font-family: var(--font-sans);
     font-weight: 900;
     color: var(--dark);
     text-transform: uppercase;
@@ -291,7 +276,7 @@ legend {
 }
 
 .current-price {
-    font-family: 'Bebas Neue', cursive;
+    font-family: var(--font-display);
     font-size: 3rem;
     font-weight: 400;
     color: var(--primary);
@@ -299,7 +284,7 @@ legend {
 }
 
 .original-price {
-    font-family: 'Inter', sans-serif;
+    font-family: var(--font-sans);
     font-size: 1.5rem;
     font-weight: 700;
     color: var(--dark);
@@ -311,7 +296,7 @@ legend {
     color: var(--white);
     padding: 0.5rem 1rem;
     border: var(--border);
-    font-family: 'Inter', sans-serif;
+    font-family: var(--font-sans);
     font-weight: 900;
     font-size: 0.9rem;
     text-transform: uppercase;
@@ -324,7 +309,7 @@ legend {
     color: var(--white);
     padding: 1rem;
     border: var(--border);
-    font-family: 'Inter', sans-serif;
+    font-family: var(--font-sans);
     font-weight: 900;
     font-size: 1.1rem;
     text-align: center;
@@ -346,25 +331,25 @@ legend {
     border: var(--border);
     box-shadow: var(--shadow);
     padding: 2rem;
-}
 
-.product-description h3 {
-    font-family: 'Bebas Neue', cursive;
-    font-size: 1.5rem;
-    font-weight: 400;
-    color: var(--dark);
-    margin: 0 0 1rem 0;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-}
+    & h3 {
+        font-family: var(--font-display);
+        font-size: 1.5rem;
+        font-weight: 400;
+        color: var(--dark);
+        margin: 0 0 1rem 0;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+    }
 
-.product-description p {
-    font-family: 'Inter', sans-serif;
-    font-size: 1rem;
-    font-weight: 400;
-    line-height: 1.6;
-    color: var(--dark);
-    margin: 0;
+    & p {
+        font-family: var(--font-sans);
+        font-size: 1rem;
+        font-weight: 400;
+        line-height: 1.6;
+        color: var(--dark);
+        margin: 0;
+    }
 }
 
 /* Product Actions */
@@ -377,17 +362,17 @@ legend {
 
 .quantity-section {
     margin-bottom: 2rem;
-}
 
-.quantity-section label {
-    display: block;
-    font-family: 'Inter', sans-serif;
-    font-weight: 900;
-    font-size: 0.9rem;
-    color: var(--dark);
-    margin-bottom: 1rem;
-    text-transform: uppercase;
-    letter-spacing: 1px;
+    & label {
+        display: block;
+        font-family: var(--font-sans);
+        font-weight: 900;
+        font-size: 0.9rem;
+        color: var(--dark);
+        margin-bottom: 1rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
 }
 
 .quantity-controls {
@@ -403,23 +388,23 @@ legend {
     border: var(--border);
     width: 50px;
     height: 50px;
-    font-family: 'Inter', sans-serif;
+    font-family: var(--font-sans);
     font-size: 1.5rem;
     font-weight: 900;
     cursor: pointer;
     box-shadow: var(--shadow);
-    transition: all 0.1s ease;
-}
+    transition: var(--transition);
 
-.quantity-btn:hover {
-    background: var(--primary);
-    box-shadow: var(--shadow-hover);
-    transform: translate(-2px, -2px);
-}
+    &:hover {
+        background: var(--primary);
+        box-shadow: var(--shadow-hover);
+        transform: translate(-2px, -2px);
+    }
 
-.quantity-btn:active {
-    box-shadow: var(--shadow-active);
-    transform: translate(2px, 2px);
+    &:active {
+        box-shadow: var(--shadow-active);
+        transform: translate(2px, 2px);
+    }
 }
 
 #quantity {
@@ -428,7 +413,7 @@ legend {
     text-align: center;
     background: var(--white);
     border: var(--border);
-    font-family: 'Inter', sans-serif;
+    font-family: var(--font-sans);
     font-size: 1.2rem;
     font-weight: 900;
     color: var(--dark);
@@ -440,38 +425,38 @@ legend {
     border: var(--border);
     padding: 1rem 2rem;
     width: 100%;
-    font-family: 'Inter', sans-serif;
+    font-family: var(--font-sans);
     font-weight: 700;
     font-size: 1.1rem;
     text-transform: uppercase;
     letter-spacing: 2px;
     cursor: pointer;
     box-shadow: var(--shadow);
-    transition: all 0.1s ease;
+    transition: var(--transition);
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-}
 
-.add-to-cart-btn:hover {
-    background: var(--info);
-    color: var(--dark);
-    box-shadow: var(--shadow-hover);
-    transform: translate(-2px, -2px);
-}
+    &:hover {
+        background: var(--info);
+        color: var(--dark);
+        box-shadow: var(--shadow-hover);
+        transform: translate(-2px, -2px);
+    }
 
-.add-to-cart-btn:active {
-    box-shadow: var(--shadow-active);
-    transform: translate(2px, 2px);
-}
+    &:active {
+        box-shadow: var(--shadow-active);
+        transform: translate(2px, 2px);
+    }
 
-.add-to-cart-btn:disabled {
-    background: var(--text-muted);
-    color: var(--white);
-    cursor: not-allowed;
-    transform: none;
-    box-shadow: var(--shadow);
+    &:disabled {
+        background: var(--text-muted);
+        color: var(--white);
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: var(--shadow);
+    }
 }
 
 /* Product Meta */
@@ -484,22 +469,22 @@ legend {
 
 .meta-item {
     margin-bottom: 1rem;
-    font-family: 'Inter', sans-serif;
+    font-family: var(--font-sans);
     font-size: 0.9rem;
     font-weight: 400;
     color: var(--dark);
-}
 
-.meta-item:last-child {
-    margin-bottom: 0;
-}
+    &:last-child {
+        margin-bottom: 0;
+    }
 
-.meta-item strong {
-    font-weight: 900;
-    color: var(--text);
-    margin-right: 0.5rem;
-    text-transform: uppercase;
-    letter-spacing: 1px;
+    & strong {
+        font-weight: 900;
+        color: var(--text);
+        margin-right: 0.5rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
 }
 
 /* Related Products */
@@ -509,17 +494,17 @@ legend {
     box-shadow: var(--shadow);
     padding: 2rem;
     margin-top: 3rem;
-}
 
-.related-products h3 {
-    font-family: 'Bebas Neue', cursive;
-    font-size: 2rem;
-    font-weight: 400;
-    color: var(--dark);
-    margin: 0 0 2rem 0;
-    text-align: center;
-    text-transform: uppercase;
-    letter-spacing: 2px;
+    & h3 {
+        font-family: var(--font-display);
+        font-size: 2rem;
+        font-weight: 400;
+        color: var(--dark);
+        margin: 0 0 2rem 0;
+        text-align: center;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+    }
 }
 
 .products-grid {

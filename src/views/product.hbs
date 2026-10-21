@@ -4,13 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>{{product.name}} - {{appName}}</title>
-    <link rel="stylesheet" href="../stylesheets/chat.css" media="screen,print" >
-    <link rel="stylesheet" href="../stylesheets/product.css" media="screen,print" >
+    <link rel="stylesheet" href="/themes/neo-brutalist/theme.css" media="screen,print" >
+    <link rel="stylesheet" href="/themes/neo-brutalist/product.css" media="screen,print" >
     <link rel="icon" href="../images/redis-avatar.png" type="image/png">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 
     <meta name="description" content="{{product.description}}">
     <meta property="og:title" content="{{product.name}} - {{appName}}">
@@ -42,10 +39,10 @@
                 <button onclick="history.back()" class="back-btn">
                     <i class="fas fa-arrow-left"></i> Back
                 </button>
-                <div class="cart-info">
+                <p class="cart-info">
                     <i class="fas fa-shopping-cart"></i>
                     <span class="cart-count">0</span>
-                </div>
+                </p>
                 {{> github-link}}
             </div>
         </div>
@@ -126,28 +123,28 @@
         <!-- Related Products Section -->
         <aside class="related-products" aria-labelledby="related-heading">
             <h3 id="related-heading">You might also like</h3>
-            <div id="related-products-grid" class="products-grid" role="list">
+            <ul id="related-products-grid" class="products-grid">
                 <!-- Related products will be loaded here -->
-            </div>
+            </ul>
 
             <!-- Cards in the related products grid -->
             <template id="related-product-template">
-                <div class="product-card" role="listitem">
-                    <div class="product-image">
+                <li class="product-card">
+                    <figure class="product-image">
                         <span class="product-emoji"></span>
-                    </div>
+                    </figure>
                     <div class="product-info">
                         <h4></h4>
                         <p class="product-price"></p>
                         <a class="view-btn">View product</a>
                     </div>
-                </div>
+                </li>
             </template>
 
             <template id="related-placeholder-template">
-                <div class="placeholder-message">
+                <li class="placeholder-message">
                     <p>Related products feature coming soon!</p>
-                </div>
+                </li>
             </template>
         </aside>
     </main>
