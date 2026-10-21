@@ -184,7 +184,7 @@ export const processWorkOutputWithCaching = async (state: ShoppingAgentStateType
         return {};
     }
 
-    const reply = state.messages.at(-1)!.content as string;
+    const reply = state.messages.at(-1)!.text;
 
     const lastUserMessage = state.messages.findLast((message) => message.getType() === "human");
     const query = (lastUserMessage?.content || "") as string;

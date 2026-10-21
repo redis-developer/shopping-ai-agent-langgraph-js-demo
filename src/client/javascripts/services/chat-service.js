@@ -40,18 +40,6 @@ export const chatData = {
     }
 };
 
-/**
- * Sends a chat message to the server.
- * 
- * @param {string} userId 
- * @param {string} sessionId 
- * @param {string} message 
- * @param {Object} [options]
- * @param {() => void} [options.onLoad]                 - called before fetch
- * @param {(reply: string) => void} [options.onSuccess] - called with assistant reply
- * @param {(error: any) => void} [options.onError]      - called on fetch or server error
- * @param {boolean} [options.lookupSimilarResponses]      - whether to look up similar responses in the semantic cache (default: true)
- */
 async function getJson(url) {
     const res = await fetch(url);
     if (!res.ok) {
@@ -81,8 +69,65 @@ export function fetchSessionMessages(sessionId) {
     return getJson(`/api/ai/chat/sessions/${encodeURIComponent(sessionId)}`);
 }
 
+/**
+ * Reads the server's stream of events and returns the last one, which carries the full reply.
+ * What the assistant is doing and the reply's text arrive first, piece by piece.
+ * @param {Response} res
+ * @param {(text: string) => void} [onToken]
+ * @param {(step: {label: string, status: 'started'|'finished', durationMs?: number}) => void} [onStep]
+ * @returns {Promise<{content: string, attachments?: Array, usage?: Object, isCachedResponse: boolean}>}
+ */
+async function readReply(res, onToken, onStep) {
+    const reader = res.body.pipeThrough(new TextDecoderStream()).getReader();
+    let unread = '';
+    let reply = null;
+
+    for (;;) {
+        const { value, done } = await reader.read();
+        if (done) break;
+
+        // Each event is "event: <type>" and "data: <json>", followed by a blank line
+        unread += value;
+        const events = unread.split('\n\n');
+        unread = events.pop();
+
+        for (const event of events) {
+            const [typeLine, dataLine] = event.split('\n');
+            const type = typeLine.slice('event: '.length);
+            const data = JSON.parse(dataLine.slice('data: '.length));
+
+            if (type === 'token') {
+                onToken?.(data.text);
+            } else if (type === 'step') {
+                onStep?.(data);
+            } else if (type === 'done') {
+                reply = data;
+            } else if (type === 'error') {
+                throw new Error(data.message);
+            }
+        }
+    }
+
+    if (!reply) throw new Error('The reply ended before it was complete');
+    return reply;
+}
+
+/**
+ * Sends a chat message to the server.
+ * 
+ * @param {string} userId 
+ * @param {string} sessionId 
+ * @param {string} message 
+ * @param {Object} [options]
+ * @param {() => void} [options.onLoad]                 - called before fetch
+ * @param {(text: string) => void} [options.onToken]    - called with each piece of the reply as it is written
+ * @param {(step: {label: string, status: 'started'|'finished', durationMs?: number}) => void} [options.onStep] - called when a step starts and finishes
+ * @param {(reply: string) => void} [options.onSuccess] - called with assistant reply
+ * @param {(error: any) => void} [options.onError]      - called on fetch or server error
+ * @param {boolean} [options.lookupSimilarResponses]      - whether to look up similar responses in the semantic cache (default: true)
+ */
 export async function sendChatMessage(userId, sessionId, message, options = {}) {
-    const { onLoad, onSuccess, onError, lookupSimilarResponses = true } = options;
+    const { onLoad, onToken, onStep, onSuccess, onError, lookupSimilarResponses = true } = options;
 
     try {
         onLoad?.();
@@ -103,10 +148,10 @@ export async function sendChatMessage(userId, sessionId, message, options = {}) 
             throw new Error(error.error || 'Unknown error');
         }
 
+        const data = await readReply(res, onToken, onStep);
+
         const endTime = performance.now();
         const responseTime = (endTime - startTime) / 1000; // in seconds
-
-        const data = await res.json();
 
         const chatMessageObject = {
             role: 'assistant',

@@ -7,6 +7,7 @@ import { ChatBedrockConverse } from "@langchain/aws";
  */
 export function createGuardrails(settings: AwsBedrockSettings) {
     const model = new ChatBedrockConverse({
+        disableStreaming: true,
         model: settings.modelId,
         region: settings.region,
         credentials: {
@@ -34,7 +35,7 @@ export function createGuardrails(settings: AwsBedrockSettings) {
                 console.log('Response metadata:', response.response_metadata);
             }
 
-            return { blocked, message: response.content as string };
+            return { blocked, message: response.text };
         }
     };
 }

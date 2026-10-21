@@ -4,6 +4,8 @@ import { StateGraph, START, END } from "@langchain/langgraph";
 import { HumanMessage, AIMessage } from "@langchain/core/messages";
 
 import { ShoppingAgentState } from "./state.ts";
+import { readRun } from "./stream-events.ts";
+import type { Step } from "./stream-events.ts";
 import type { ShoppingAgentStateType } from "./state.ts";
 import { toolsCondition } from "@langchain/langgraph/prebuilt";
 
@@ -75,7 +77,7 @@ export function getWorkflowExecutionSummary(graphResult: ShoppingAgentStateType)
     const summary = {
         toolsUsed: toolNames.length > 0 ? toolNames : ["none"],
         cacheStatus: graphResult.cacheStatus || "miss",
-        finalResult: graphResult.messages.at(-1)!.content,
+        finalResult: graphResult.messages.at(-1)!.text,
         guardrailTestResult: graphResult.guardrailTestResult || "not-tested",
         sessionId: graphResult.sessionId
     };
@@ -117,8 +119,17 @@ export function getWorkflowExecutionSummary(graphResult: ShoppingAgentStateType)
 /**
  * Main function for running the grocery shopping agent workflow
  * Uses Redis Agent Memory for conversation history
+ * @param onToken - Called with each piece of the agent's reply as it is written
+ * @param onStep - Called when a step of the workflow, or a tool call, starts and finishes
  */
-export async function runShoppingAgentWorkflow(userId: string, sessionId: string, message: string, lookupSimilarResponses: boolean) {
+export async function runShoppingAgentWorkflow(
+    userId: string,
+    sessionId: string,
+    message: string,
+    lookupSimilarResponses: boolean,
+    onToken: (text: string) => void,
+    onStep: (step: Step) => void
+) {
     console.log(`\n${'='.repeat(60)}`);
     console.log(`🚀 Shopping Agent Workflow - Session: ${sessionId}`);
     console.log(`${'='.repeat(60)}\n`);
@@ -146,22 +157,26 @@ export async function runShoppingAgentWorkflow(userId: string, sessionId: string
 
     // Run the workflow, adding up token usage across every model call in it
     const usageHandler = new UsageCallbackHandler();
-    const result = await shoppingWorkflowGraph.invoke({
+    const run = await shoppingWorkflowGraph.streamEvents({
         userId,
         sessionId,
         messages,
         conversationSummary: workingMemory.summary || undefined,
         lookupSimilarResponses,
     }, {
+        version: "v3",
         callbacks: [usageHandler],
         // Read by the tools (cart and memory) via config.configurable
         configurable: { userId, sessionId }
     });
 
+    await readRun(run, onToken, onStep);
+    const result = await run.output;
+
     // Get execution summary for logging
     const executionSummary = getWorkflowExecutionSummary(result);
 
-    const finalReply = result.messages.at(-1)!.content as string;
+    const finalReply = result.messages.at(-1)!.text;
 
     const queryResult = {
         isCachedResponse: result.cacheStatus === "hit",

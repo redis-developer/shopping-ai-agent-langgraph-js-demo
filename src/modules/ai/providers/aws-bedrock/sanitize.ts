@@ -52,6 +52,7 @@ Text with placeholders: "${text}"
 Clean text:`;
     // PII redaction model with guardrails for input-level PII detection and placeholder cleanup
     const piiRedactionModel = new ChatBedrockConverse({
+        disableStreaming: true,
         model: settings.modelId,
         region: settings.region,
         credentials: {
@@ -78,6 +79,6 @@ Clean text:`;
         console.log('🛡️ PII content detected and cleaned by guardrails during data compliance processing');
     }
 
-    const cleanedText = (response.content as string).trim();
+    const cleanedText = response.text.trim();
     return cleanedText;
 }

@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { processShoppingInquiry, getShopperContext } from '../domain/chat-service.ts';
 import { getWorkingMemory } from '../domain/agent-memory-service.ts';
-import { HttpStatusCode } from '../../../lib/errors.ts';
+import { AppError, HttpStatusCode } from '../../../lib/errors.ts';
 
 const router = Router();
 
@@ -13,16 +13,34 @@ router.post('/', async function(req, res, next) {
         return res.status(HttpStatusCode.BAD_REQUEST).json({ error: 'Missing message, userId or sessionId' });
     }
 
+    // The reply is sent as a stream of events: what the assistant is doing, its text as the
+    // agent writes it, then one last event with everything else. The stream starts with the first event, so an
+    // error before that still gets the usual JSON error response.
+    let streaming = false;
+    const send = (event: string, data: object) => {
+        if (!streaming) {
+            streaming = true;
+            res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', 'X-Accel-Buffering': 'no' });
+        }
+        res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+    };
+
     try {
-        const reply = await processShoppingInquiry(userId, sessionId, message, lookupSimilarResponses);
-        res.json({ 
+        const reply = await processShoppingInquiry(userId, sessionId, message, lookupSimilarResponses, (text) => send('token', { text }), (step) => send('step', step));
+        send('done', {
             content: reply.content,
             attachments: reply.attachments,
             isCachedResponse: reply.isCachedResponse,
             usage: reply.usage
         });
+        res.end();
     } catch (error) {
-        next(error);
+        if (!streaming) {
+            return next(error);
+        }
+        console.error('Error while streaming the reply:', error);
+        send('error', { message: error instanceof AppError && error.publicMessage ? error.publicMessage : "We couldn't complete this action. Please try again in a bit." });
+        res.end();
     }
 });
 

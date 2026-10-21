@@ -28,7 +28,8 @@ async function getIngredientsFromLLM(recipe: string): Promise<z.infer<typeof rec
         temperature: 0.1, // Lower temperature for more consistent parsing
         fast: true, // Faster, cheaper model for simple tasks
         maxTokens: 500, // Limit response size for faster processing
-        timeout: 10000 // 10 second timeout built into the model
+        timeout: 10000, // 10 second timeout built into the model
+        disableStreaming: true // The shopper does not see this call's reply
     });
 
     const systemPrompt = `Extract essential ingredients for this recipe.
@@ -114,7 +115,7 @@ export const directAnswerTool = tool(
 
         try {
             // Direct LLM call for general questions
-            const model = createChatModel({ temperature: 0.2 });
+            const model = createChatModel({ temperature: 0.2, disableStreaming: true });
 
             const systemPrompt = `You are a knowledgeable grocery shopping and cooking assistant. Answer questions about:
 - Cooking methods and techniques
@@ -134,7 +135,7 @@ Do not mention specific product prices or brands - focus on general knowledge an
 
             return {
                 success: true,
-                content: response.content,
+                content: response.text,
                 question: question
             };
 

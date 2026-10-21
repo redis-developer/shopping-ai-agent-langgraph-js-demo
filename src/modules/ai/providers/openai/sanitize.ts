@@ -12,7 +12,7 @@ export async function sanitizeForCache(settings: OpenAISettings, text: string) {
     if (!text || typeof text !== 'string') return text;
 
     try {
-        const model = createChatModel(settings, { temperature: 0 });
+        const model = createChatModel(settings, { temperature: 0, disableStreaming: true });
 
         const sanitizationPrompt = `You are a GDPR compliance assistant. Your task is to remove or anonymize any personal information from the given text while preserving the core meaning and context.
 
@@ -36,7 +36,7 @@ Text to sanitize: "${text}"
 Return only the sanitized text with no additional explanation:`;
 
         const response = await model.invoke(sanitizationPrompt);
-        return (response.content as string).trim();
+        return response.text.trim();
 
     } catch (error) {
         console.error('Error in LLM sanitization, using original text:', error);

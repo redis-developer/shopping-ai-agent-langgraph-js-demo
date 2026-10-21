@@ -95,6 +95,12 @@ export class ShoppingApp {
 
         await sendChatMessage(this.userId, this.sessionId, message, {
             lookupSimilarResponses,
+            onStep: (step) => {
+                if (step.status === 'started') this.chatWindow.showStatus(step.label);
+            },
+            onToken: (text) => {
+                this.chatWindow.appendToReply(text);
+            },
             onSuccess: (chatMessage) => {
                 this.chatWindow.hideTypingIndicator();
                 this.chatWindow.addMessage(chatMessage.content, 'assistant', chatMessage);
