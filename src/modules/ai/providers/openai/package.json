@@ -5,7 +5,7 @@
   "type": "module",
   "main": "index.ts",
   "dependencies": {
-    "@langchain/openai": "^1.6.2",
-    "openai": "7.34.0"
+    "@langchain/openai": "^1.7.0",
+    "openai": "7.42.0"
   }
 }

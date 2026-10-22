@@ -5,6 +5,6 @@
   "type": "module",
   "main": "index.ts",
   "dependencies": {
-    "@langchain/aws": "^1.4.7"
+    "@langchain/aws": "^1.5.0"
   }
 }

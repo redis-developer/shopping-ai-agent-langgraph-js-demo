@@ -1,13 +1,14 @@
-import { MessagesZodState } from "@langchain/langgraph";
+import { MessagesValue, StateSchema } from "@langchain/langgraph";
 import { z } from "zod";
 
 /**
  * Grocery Shopping Agent State Schema
  *
- * Extends the base `MessagesZodState` with grocery shopping specific metadata
+ * The message history, plus grocery shopping specific metadata
  * for tracking session context, caching, tool invocation, and shopping cart details.
  */
-export const ShoppingAgentState = MessagesZodState.extend({
+export const ShoppingAgentState = new StateSchema({
+    messages: MessagesValue,
     /** Stable user ID (owns the cart and long-term memories) */
     userId: z.string(),
     /** Unique session ID for tracking the user's shopping session */
@@ -41,4 +42,4 @@ export const ShoppingAgentState = MessagesZodState.extend({
     ])).optional(),
 });
 
-export type ShoppingAgentStateType = z.infer<typeof ShoppingAgentState>;
+export type ShoppingAgentStateType = typeof ShoppingAgentState.State;
