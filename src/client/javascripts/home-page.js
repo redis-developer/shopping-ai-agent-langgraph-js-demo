@@ -68,7 +68,7 @@ export class ShoppingApp {
             (message) => this.sendMessage(message)
         );
 
-        this.suggestionButtons = new SuggestionButtons((text) => {
+        this.suggestionButtons = new SuggestionButtons(DOM_IDS.CHAT_MESSAGES, (text) => {
             this.chatInput.setValue(text);
             this.sendMessage(text);
         });
@@ -88,6 +88,7 @@ export class ShoppingApp {
         if (this.isLoading) return;
 
         this.isLoading = true;
+        this.chatWindow.clearSuggestedFollowUps();
         this.chatWindow.addMessage(message, 'user');
         this.chatWindow.showTypingIndicator();
 
@@ -104,6 +105,7 @@ export class ShoppingApp {
             onSuccess: (chatMessage) => {
                 this.chatWindow.hideTypingIndicator();
                 this.chatWindow.addMessage(chatMessage.content, 'assistant', chatMessage);
+                this.chatWindow.showSuggestedFollowUps(chatMessage.suggestedFollowUps);
 
                 if (chatMessage.attachments?.length && !this.cartCountLoaded) {
                     this.cartCount.load(this.userId);

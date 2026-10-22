@@ -1,18 +1,14 @@
 export class SuggestionButtons {
-    constructor(onSuggestionClick = null) {
-        this.onSuggestionClick = onSuggestionClick;
-        this.init();
-    }
-
-    init() {
-        const suggestionBtns = document.querySelectorAll('.suggestion-btn');
-        suggestionBtns.forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const text = e.target.getAttribute('data-text');
-                if (text && this.onSuggestionClick) {
-                    this.onSuggestionClick(text);
-                }
-            });
+    /**
+     * @param {string} containerId - The element the buttons are in. Buttons added to it later work too.
+     * @param {(text: string) => void} onSuggestionClick - Called with the text of the clicked button.
+     */
+    constructor(containerId, onSuggestionClick) {
+        document.getElementById(containerId).addEventListener('click', (event) => {
+            const text = event.target.closest('.suggestion-btn')?.getAttribute('data-text');
+            if (text) {
+                onSuggestionClick(text);
+            }
         });
     }
 }

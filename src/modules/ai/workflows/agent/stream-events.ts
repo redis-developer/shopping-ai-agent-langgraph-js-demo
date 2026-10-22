@@ -5,6 +5,7 @@ const STEP_LABELS: Record<string, string> = {
     retrieve_long_term_memories: "Recalling your preferences…",
     personal_shopper_agent: "Thinking…",
     process_work_output_with_caching: "Saving this answer for next time…",
+    generate_suggested_follow_ups: "Lining up next steps…",
 
     search_products: "Searching products…",
     find_recipe_ingredient_products: "Finding ingredients for your recipe…",
@@ -26,9 +27,10 @@ export type Step = { label: string; status: "started" | "finished"; durationMs?:
 type StreamEvent = { method: string; params: { node?: string; data?: any } };
 
 /**
- * Reads the events of a graph run and passes on two things as they happen: the shopper agent's
- * reply, piece by piece, and when each step starts and finishes. The other model calls in the
- * graph (recipe ingredients, cleaning text for the cache) are not part of the reply.
+ * Reads the events of a graph run and passes on two things as they happen: the reply, piece by
+ * piece, and when each step starts and finishes. The reply is either the shopper agent's, or a
+ * cached one, which comes in one piece. The other model calls in the graph (recipe ingredients,
+ * cleaning text for the cache, follow-ups) are not part of the reply.
  * @param run - The stream returned by the graph's streamEvents
  * @param onToken - Called with each piece of the reply
  * @param onStep - Called when a step starts, and when it finishes with how long it took
@@ -58,6 +60,11 @@ export async function readRun(
         if (method === "messages") {
             if (params.node === "personal_shopper_agent" && data.event === "content-block-delta" && data.delta?.type === "text-delta") {
                 onToken(data.delta.text);
+            }
+        } else if (method === "updates") {
+            // A cached reply is known as soon as the cache check is done, so it can be shown before the rest of the graph is
+            if (params.node === "query_cache_check" && data.values.cacheStatus === "hit") {
+                onToken(data.values.messages.at(-1).text);
             }
         } else if (method === "lifecycle") {
             // "root" is the whole run, and the "tools" node is reported through its tool calls instead

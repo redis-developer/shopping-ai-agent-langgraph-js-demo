@@ -150,13 +150,14 @@ Pick one with `AI_PROVIDER`:
 
 ## Architecture
 
-The grocery agent uses a LangGraph-powered AI agent that routes requests through specialized tools.
+The shopping agent is a LangGraph workflow. For every message it:
 
-1. **Cache Check**: First checks Redis semantic cache for similar queries
-2. **AI Agent**: Routes to appropriate tools based on request type
-3. **Specialized Tools**: Recipe ingredients, product search, cart operations, direct answers
-4. **Modules Layer**: Product, cart, and chat modules
-5. **Redis Storage**: Vector embeddings, semantic cache, and session data
+1. **Checks the semantic cache** (Redis LangCache) for a similar earlier question. A hit returns the cached reply right away.
+2. **Recalls what it knows about the shopper** from Redis Agent Memory: the conversation so far and their saved preferences.
+3. **Lets the AI agent work.** The agent calls tools for recipe ingredients, product search, cart actions, cooking answers and memory lookups. The tools use the product, cart and chat services.
+4. **Finishes up.** It suggests follow-ups, caches the reply (with personal information removed) and saves the turn to Agent Memory.
+
+Redis is the storage layer for all of it: products and their embeddings (vector and keyword search), shopper's cart data, the semantic cache for knowledge base, and conversations and shopper preferences (agent memory).
 
 ### Overview
 
@@ -171,6 +172,11 @@ The grocery agent uses a LangGraph-powered AI agent that routes requests through
 ### Components and request flow
 
 ![Components and request flow](./docs/technical-diagrams/component-diagram-mermaid.svg)
+
+### Request sequence
+
+
+![Request sequence](./docs/technical-diagrams/sequence-diagram-mermaid.png)
 
 ### Agent graph
 
@@ -239,7 +245,7 @@ src/
 
 | Method | Endpoint | Description |
 |---|---|---|
-| `POST` | `/api/ai/chat` | Main chat interface for AI shopping assistant |
+| `POST` | `/api/ai/chat` | Main chat interface for AI shopping assistant. The reply is streamed as server-sent events: `step` (what the assistant is doing), `token` (the reply text as it is written), then `done` (the full reply, product cards, suggested follow-ups and token usage) |
 | `GET` | `/api/ai/chat/context` | A shopper's saved preferences, session summary and earlier sessions (`userId` and `sessionId` query parameters) |
 | `GET` | `/api/ai/chat/sessions/:sessionId` | The messages of a session, to continue it in the chat |
 

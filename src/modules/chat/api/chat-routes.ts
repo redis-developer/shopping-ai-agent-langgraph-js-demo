@@ -30,6 +30,7 @@ router.post('/', async function(req, res, next) {
         send('done', {
             content: reply.content,
             attachments: reply.attachments,
+            suggestedFollowUps: reply.suggestedFollowUps,
             isCachedResponse: reply.isCachedResponse,
             usage: reply.usage
         });

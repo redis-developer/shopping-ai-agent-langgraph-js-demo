@@ -112,6 +112,7 @@
 
 .welcome-message {
     display: flex;
+    flex-direction: column;
     gap: 0.75rem;
     margin-bottom: 1rem;
 }
@@ -332,7 +333,7 @@
 }
 
 .chat-product-card:hover {
-    box-shadow: var(--shadow-hover);
+    box-shadow: var(--shadow-hover-medium);
     transform: translate(-2px, -2px);
 }
 
@@ -493,16 +494,28 @@
     display: flex;
     gap: 0.5rem;
     flex-wrap: wrap;
-    margin-top: 0.75rem;
     opacity: 1;
     visibility: visible;
     position: relative;
     z-index: 10;
+
+    /* A reply without follow-ups */
+    &:empty {
+        display: none;
+    }
+}
+
+.reply-footer {
+    margin-bottom: 1rem;
+
+    & .quick-suggestions {
+        margin-bottom: 0.5rem;
+    }
 }
 
 .suggestion-btn {
     background: var(--white);
-    border: var(--border);
+    border: var(--border-medium);
     padding: 0.5rem 0.75rem;
     font-family: var(--font-sans);
     font-size: 0.7rem;
@@ -517,7 +530,7 @@
     &:hover {
         background: var(--primary);
         color: var(--white);
-        box-shadow: var(--shadow-hover);
+        box-shadow: var(--shadow-hover-medium);
         transform: translate(-1px, -1px);
     }
 }

@@ -10,6 +10,7 @@ export class ChatWindow {
         this.onProductAction = onProductAction;
         this.onProductOpen = onProductOpen;
         this.streamingReply = null; // The assistant's reply while it is still being written
+        this.replyFooter = null; // The footer after the latest assistant message: its follow-ups and usage breakdown
         this.streamingText = '';
     }
 
@@ -31,11 +32,18 @@ export class ChatWindow {
 
         const messageElement = chatMessage.createElement();
         if (sender === 'assistant' && this.streamingReply) {
-            // The reply was shown as it was written. Swap it for the finished message, with its cards and usage.
+            // The reply was shown as it was written. Swap it for the finished message, with its cards.
             this.streamingReply.replaceWith(messageElement);
             this.streamingReply = null;
         } else {
             this.messagesContainer.appendChild(messageElement);
+        }
+
+        const responseInfo = chatMessage.createResponseInfo();
+        if (responseInfo) {
+            this.replyFooter = document.getElementById(DOM_IDS.REPLY_FOOTER_TEMPLATE).content.firstElementChild.cloneNode(true);
+            this.replyFooter.appendChild(responseInfo);
+            messageElement.after(this.replyFooter);
         }
         this.scrollToBottom();
     }
@@ -59,6 +67,37 @@ export class ChatWindow {
         this.scrollToBottom();
     }
 
+    /**
+     * Shows buttons under the latest reply, each sending its text as the shopper's next message.
+     * @param {string[]} [followUps]
+     */
+    showSuggestedFollowUps(followUps = []) {
+        // Every reply that came from the server has a footer
+        if (!this.replyFooter) return;
+
+        this.replyFooter.querySelector('.quick-suggestions').replaceChildren(...this.createSuggestionItems(followUps));
+        this.scrollToBottom();
+    }
+
+    /**
+     * Builds one list item with a button for each text. Clicking a button sends its text as the shopper's message.
+     * @param {string[]} texts
+     * @returns {HTMLLIElement[]}
+     */
+    createSuggestionItems(texts) {
+        return texts.map((text) => {
+            const item = document.getElementById(DOM_IDS.SUGGESTION_TEMPLATE).content.firstElementChild.cloneNode(true);
+            const button = item.querySelector('.suggestion-btn');
+            button.dataset.text = text;
+            button.textContent = text;
+            return item;
+        });
+    }
+
+    clearSuggestedFollowUps() {
+        this.replyFooter?.querySelector('.quick-suggestions').replaceChildren();
+    }
+
     showTypingIndicator() {
         this.typingIndicator.show();
     }
@@ -79,6 +118,7 @@ export class ChatWindow {
 
     clear() {
         this.streamingReply = null;
+        this.replyFooter = null;
         if (this.messagesContainer) {
             this.messagesContainer.innerHTML = '';
         }

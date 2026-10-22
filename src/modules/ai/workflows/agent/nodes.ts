@@ -1,4 +1,5 @@
-import { AIMessage } from "@langchain/core/messages";
+import { AIMessage, HumanMessage } from "@langchain/core/messages";
+import { z } from "zod";
 import { ToolNode } from "@langchain/langgraph/prebuilt";
 import { shoppingTools } from "./tools/shopping-tools.ts";
 import { memoryTools } from "./tools/memory-tools.ts";
@@ -11,6 +12,10 @@ import type { ShoppingAgentStateType } from "./state.ts";
 import { createChatModel, sanitizeForCache, guardrails } from "../../providers/index.ts";
 
 const allTools = [...shoppingTools, ...memoryTools];
+
+const suggestedFollowUpsSchema = z.object({
+    followUps: z.array(z.string()).describe("Up to 3 short messages the shopper could send next")
+});
 
 // What the tools return, as far as this file reads it
 type ToolProduct = { id: string; name: string; salePrice: number; category: string; rating: number };
@@ -260,4 +265,75 @@ export const processWorkOutputWithCaching = async (state: ShoppingAgentStateType
     }
 
     return { attachments };
+};
+
+/**
+ * Node 7: Generate Suggested Follow-ups
+ * Writes a few short messages the shopper could send next, from the last exchange and
+ * the shopper's saved preferences. They are not cached, so each shopper gets their own,
+ * also when the reply came from the cache.
+ */
+export const generateSuggestedFollowUps = async (state: ShoppingAgentStateType) => {
+    // No follow-ups after a failed model call or a blocked request
+    if (state.error || state.guardrailTestResult === "blocked") {
+        return {};
+    }
+
+    const lastUserMessage = state.messages.findLast((message) => message.getType() === "human");
+    const reply = state.messages.at(-1)!.text;
+
+    const preferencesBlock = state.longTermMemories?.length
+        ? `\nWhat we know about this shopper:\n${state.longTermMemories.map((memoryText) => `- ${memoryText}`).join("\n")}\n`
+        : "";
+
+    const systemPrompt = `Suggest up-to 3 short messages the shopper could send next in this grocery shopping chat.
+
+Rules:
+- Write each from the shopper's point of view, in 5 words or fewer
+- Make each something the assistant can act on: add products to the cart, show other options, or a related recipe or product
+- Write in the language of the shopper's last message
+- Use the shopper's saved preferences only when they clearly apply
+- Do not repeat what the shopper just asked
+
+Here are some examples (only to show the style):
+
+Example 1:
+Shopper: What do I need for dal tadka?
+Assistant: Here are the ingredients for dal tadka: toor dal, ghee, cumin, garlic, tomatoes, with product suggestions.
+Follow-ups: ["Add all items to my cart", "Show cheaper toor dal options", ]
+
+Example 2:
+Shopper: Add 2 packets of milk
+Assistant: Done! I added 2 packets of milk to your cart.
+Follow-ups: ["What's in my cart?", "Show me curd and butter products", "Add bread too"]
+
+Example 3:
+What we know about this shopper: Vegetarian, avoids onion and garlic
+
+Shopper: Show me some snacks
+Assistant: Here are some snacks: roasted makhana, salted peanuts, and baked chips.
+Follow-ups: ["Show Jain-friendly snacks", "Any healthy options?"]
+
+${preferencesBlock}`;
+
+    try {
+        const model = createChatModel({
+            temperature: 0.5,
+            fast: true,
+            maxTokens: 150,
+            timeout: 10000,
+            disableStreaming: true // The shopper does not see this call's reply
+        });
+
+        const { followUps } = await model.withStructuredOutput(suggestedFollowUpsSchema).invoke([
+            { role: "system", content: systemPrompt },
+            new HumanMessage(`Shopper: ${lastUserMessage?.text}\n\nAssistant: ${reply}`)
+        ]);
+
+        return { suggestedFollowUps: followUps.slice(0, 3) };
+    } catch (error) {
+        // The reply is complete without them
+        console.error("Error generating suggested follow-ups:", error);
+        return {};
+    }
 };

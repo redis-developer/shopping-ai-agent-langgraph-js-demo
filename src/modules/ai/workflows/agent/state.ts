@@ -24,6 +24,8 @@ export const ShoppingAgentState = MessagesZodState.extend({
     longTermMemories: z.array(z.string()).optional(),
     /** Result of the front desk guardrail check (only for providers with guardrails) */
     guardrailTestResult: z.enum(["passed", "blocked"]).optional(),
+    /** Short messages the shopper could send next, shown as buttons under the reply */
+    suggestedFollowUps: z.array(z.string()).optional(),
     /** Content shown with the reply, such as the product cards for the products the tools found this turn (or the cached reply came with) */
     attachments: z.array(z.discriminatedUnion("type", [
         z.object({

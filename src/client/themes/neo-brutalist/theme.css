@@ -19,6 +19,8 @@
     --border: 3px solid #163342;
     --shadow: 2px 2px 0px 0px #163342;
     --shadow-hover: 6px 6px 0px 0px #163342;
+    --shadow-hover-medium: 4px 4px 0px 0px #163342;
+    --shadow-hover-thin: 2px 2px 0px 0px #163342;
     --shadow-active: 2px 2px 0px 0px #163342;
     --border-medium: 2px solid var(--dark);
     --border-thin: 1px solid var(--dark);

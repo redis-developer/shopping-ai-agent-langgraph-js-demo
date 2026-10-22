@@ -7,6 +7,7 @@ export let CHATS = {}; // In-memory store of sessionId → messages
  * @property {boolean} [isCached] - Whether the message came from cache.
  * @property {number|string} [responseTime] - Response time (optional).
  * @property {Object} [usage] - Token usage for this response (input, output, total and detail counts).
+ * @property {string[]} [suggestedFollowUps] - Short messages the shopper could send next, shown as buttons under the response.
  * @property {Array<{type: 'productSummary', data: {id: string, name: string, price: number, image: string, rating: number}}>} [attachments] - Content shown with this response, such as product cards.
  */
 
@@ -75,7 +76,7 @@ export function fetchSessionMessages(sessionId) {
  * @param {Response} res
  * @param {(text: string) => void} [onToken]
  * @param {(step: {label: string, status: 'started'|'finished', durationMs?: number}) => void} [onStep]
- * @returns {Promise<{content: string, attachments?: Array, usage?: Object, isCachedResponse: boolean}>}
+ * @returns {Promise<{content: string, attachments?: Array, suggestedFollowUps?: string[], usage?: Object, isCachedResponse: boolean}>}
  */
 async function readReply(res, onToken, onStep) {
     const reader = res.body.pipeThrough(new TextDecoderStream()).getReader();
@@ -159,6 +160,7 @@ export async function sendChatMessage(userId, sessionId, message, options = {}) 
             isCachedResponse: data.isCachedResponse,
             usage: data.usage,
             attachments: data.attachments,
+            suggestedFollowUps: data.suggestedFollowUps,
             responseTime
         }
         chatData.addMessage(sessionId, chatMessageObject);

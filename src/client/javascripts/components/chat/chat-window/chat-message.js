@@ -100,13 +100,10 @@ export class ChatMessage {
         time.dateTime = this.createdAt.toISOString();
         time.textContent = MessageFormatter.formatTimestamp(this.createdAt);
 
-        // Product cards and the usage breakdown go between the reply text and the time
+        // Product cards go between the reply text and the time
         if (!isUser) {
             const productCards = this.createProductCards();
             if (productCards) time.before(productCards);
-
-            const responseInfo = this.createResponseInfo();
-            if (responseInfo) time.before(responseInfo);
         }
 
         return messageDiv;

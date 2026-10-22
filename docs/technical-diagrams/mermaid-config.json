@@ -32,13 +32,17 @@
     "loopTextColor": "#000000",
     "activationBorderColor": "#8a99a0",
     "activationBkgColor": "#ffffff",
-    "sequenceNumberColor": "#ffffff"
+    "sequenceNumberColor": "#ffffff",
+    "noteBkgColor": "rgba(199, 149, 227, 0.12)",
+    "noteBorderColor": "#c795e3",
+    "noteTextColor": "#5c2d91"
   },
   "flowchart": {
     "nodeSpacing": 50,
     "rankSpacing": 50,
     "curve": "linear"
   },
+  "themeCSS": ".noteText, .noteText > tspan { font-weight: 700; }",
   "sequence": {
     "diagramMarginX": 50,
     "diagramMarginY": 50,

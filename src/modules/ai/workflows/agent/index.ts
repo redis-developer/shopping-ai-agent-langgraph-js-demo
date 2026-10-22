@@ -9,7 +9,7 @@ import type { Step } from "./stream-events.ts";
 import type { ShoppingAgentStateType } from "./state.ts";
 import { toolsCondition } from "@langchain/langgraph/prebuilt";
 
-import { queryCacheCheck, frontDeskAgent, personalShopperAgent, processWorkOutputWithCaching, retrieveLongTermMemories, toolNode } from "./nodes.ts";
+import { queryCacheCheck, frontDeskAgent, personalShopperAgent, processWorkOutputWithCaching, generateSuggestedFollowUps, retrieveLongTermMemories, toolNode } from "./nodes.ts";
 
 import { getWorkingMemory, addConversationTurn } from "../../../chat/domain/agent-memory-service.ts";
 import { UsageCallbackHandler } from "../../helpers/usage-callback-handler.ts";
@@ -31,33 +31,37 @@ export const createAgenticAIShoppingWorkflow = () => {
         .addNode("personal_shopper_agent", personalShopperAgent)
         .addNode("tools", toolNode)
         .addNode("process_work_output_with_caching", processWorkOutputWithCaching)
+        .addNode("generate_suggested_follow_ups", generateSuggestedFollowUps)
 
         .addEdge(START, "query_cache_check");
 
     if (guardrails) {
         // The provider screens each request first. A blocked one skips the shopping agent.
+        // A cached reply skips the screening, since it was screened when it was first made.
         builder
             .addNode("front_desk_agent", frontDeskAgent)
             .addConditionalEdges("query_cache_check", (state) => {
-                return state.cacheStatus === "hit" ? END : "front_desk_agent";
-            }, ["front_desk_agent", END])
+                return state.cacheStatus === "hit" ? "retrieve_long_term_memories" : "front_desk_agent";
+            }, ["front_desk_agent", "retrieve_long_term_memories"])
             .addConditionalEdges("front_desk_agent", (state) => {
                 return state.guardrailTestResult === "blocked" ? "process_work_output_with_caching" : "retrieve_long_term_memories";
             }, ["process_work_output_with_caching", "retrieve_long_term_memories"]);
     } else {
-        builder.addConditionalEdges("query_cache_check", (state) => {
-            return state.cacheStatus === "hit" ? END : "retrieve_long_term_memories";
-        }, ["retrieve_long_term_memories", END]);
+        builder.addEdge("query_cache_check", "retrieve_long_term_memories");
     }
 
     builder
-        .addEdge("retrieve_long_term_memories", "personal_shopper_agent")
-        .addConditionalEdges("personal_shopper_agent", toolsCondition, {
-            tools: "tools",
-            [END]: "process_work_output_with_caching"
-        })
+        // A cached reply only needs the follow-ups, since the shopper agent has nothing to do
+        .addConditionalEdges("retrieve_long_term_memories", (state) => {
+            return state.cacheStatus === "hit" ? "generate_suggested_follow_ups" : "personal_shopper_agent";
+        }, ["generate_suggested_follow_ups", "personal_shopper_agent"])
+        // When the shopper agent is done, caching the reply and writing the follow-ups run side by side
+        .addConditionalEdges("personal_shopper_agent", (state) => {
+            return toolsCondition(state) === "tools" ? "tools" : ["process_work_output_with_caching", "generate_suggested_follow_ups"];
+        }, ["tools", "process_work_output_with_caching", "generate_suggested_follow_ups"])
         .addEdge("tools", "personal_shopper_agent")
-        .addEdge("process_work_output_with_caching", END);
+        .addEdge("process_work_output_with_caching", END)
+        .addEdge("generate_suggested_follow_ups", END);
 
     const graph = builder.compile();
 
@@ -182,6 +186,7 @@ export async function runShoppingAgentWorkflow(
         isCachedResponse: result.cacheStatus === "hit",
         content: finalReply,
         attachments: result.attachments || [],
+        suggestedFollowUps: result.suggestedFollowUps || [],
         usage: usageHandler.usage,
     };
 

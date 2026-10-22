@@ -209,6 +209,18 @@
                             </ul>
                             <p>What would you like to cook today?</p>
                         </div>
+                        <ul class="quick-suggestions">
+                            <li>
+                                <button type="button" class="suggestion-btn" data-text="Show me fresh vegetables">
+                                    🥬 Fresh vegetables
+                                </button>
+                            </li>
+                            <li>
+                                <button type="button" class="suggestion-btn" data-text="What's in my cart?">
+                                    🛒 View my cart
+                                </button>
+                            </li>
+                        </ul>
                     </li>
                 </ol>
 
@@ -248,7 +260,7 @@
                     </li>
                 </template>
 
-                <!-- Usage breakdown shown in an assistant message -->
+                <!-- Usage breakdown shown in the footer of an assistant message -->
                 <template id="response-info-template">
                     <details class="response-info">
                         <summary>Usage breakdown</summary>
@@ -256,6 +268,13 @@
                         <ul></ul>
                         <p class="no-model-calls-message">No model calls were needed for this turn.</p>
                     </details>
+                </template>
+
+                <!-- Shown after an assistant message: its suggested follow-ups, then the usage breakdown -->
+                <template id="reply-footer-template">
+                    <li class="reply-footer">
+                        <ul class="quick-suggestions"></ul>
+                    </li>
                 </template>
 
                 <template id="typing-indicator-template">
@@ -282,6 +301,24 @@
                             </ul>
                             <p>What would you like to cook today?</p>
                         </div>
+                        <ul class="quick-suggestions">
+                            <li>
+                                <button type="button" class="suggestion-btn" data-text="Show me fresh vegetables">
+                                    🥬 Fresh vegetables
+                                </button>
+                            </li>
+                            <li>
+                                <button type="button" class="suggestion-btn" data-text="What's in my cart?">
+                                    🛒 View my cart
+                                </button>
+                            </li>
+                        </ul>
+                    </li>
+                </template>
+
+                <template id="suggestion-template">
+                    <li>
+                        <button type="button" class="suggestion-btn"></button>
                     </li>
                 </template>
 
@@ -307,23 +344,6 @@
                             <i class="fas fa-paper-plane"></i>
                         </button>
                     </div>
-                    <ul class="quick-suggestions">
-                        <li>
-                            <button type="button" class="suggestion-btn" data-text="What ingredients do I need for pasta?">
-                                🍝 Pasta ingredients
-                            </button>
-                        </li>
-                        <li>
-                            <button type="button" class="suggestion-btn" data-text="Show me fresh vegetables">
-                                🥬 Fresh vegetables
-                            </button>
-                        </li>
-                        <li>
-                            <button type="button" class="suggestion-btn" data-text="What's in my cart?">
-                                🛒 View my cart
-                            </button>
-                        </li>
-                    </ul>
                 </form>
             </section>
 
