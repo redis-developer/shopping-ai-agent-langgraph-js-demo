@@ -14,6 +14,7 @@
   "scripts": {
     "start": "node src/index.ts",
     "load-products": "node src/scripts/load-products.ts",
+    "setup-context-retriever": "node src/scripts/setup-context-retriever.ts",
     "debug-config": "node src/scripts/debug-config.ts",
     "typecheck": "tsc --noEmit",
     "install:openai": "npm install --include-workspace-root --workspace=@redish/ai-provider-openai",
@@ -39,6 +40,7 @@
     "@langchain/langgraph": "^1.5.0",
     "@redis-ai/langcache": "^0.12.1",
     "@redis-iris/agent-memory": "^0.3.1",
+    "@redis-iris/context-retriever": "^0.1.1",
     "cookie-parser": "~1.4.7",
     "csv-parse": "^7.0.3",
     "dotenv": "18.0.8",
@@ -47,7 +49,8 @@
     "hbs": "~4.3.1",
     "langsmith": "^0.11.0",
     "morgan": "~1.12.1",
-    "redis": "^6.3.0"
+    "redis": "^6.3.0",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@types/cookie-parser": "^1.4.10",

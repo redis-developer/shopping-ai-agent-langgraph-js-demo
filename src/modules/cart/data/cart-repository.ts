@@ -10,11 +10,23 @@ export type CartItem = {
     addedAt: string;
 };
 
-type Cart = {
+export type Cart = {
     items: CartItem[];
     createdAt: string;
     updatedAt: string;
 };
+
+/** What is stored for a shopper: their cart is a list of items inside one JSON document */
+export type UserDocument = {
+    userId: string;
+    cart: Cart;
+    createdAt: string;
+    updatedAt: string;
+};
+
+/** A shopper's document is stored under a key made of this prefix and the user ID */
+export const USER_KEY_PREFIX = 'users:';
+export const USER_KEY_TEMPLATE = `${USER_KEY_PREFIX}{userId}`;
 
 export default class CartRepository {
 
@@ -25,7 +37,7 @@ export default class CartRepository {
      */
     async checkItemExistsInCart(userId: string, productId: string): Promise<CartItem | null> {
         const client = await getRedisClient();
-        const userKey = `users:${userId}`;
+        const userKey = `${USER_KEY_PREFIX}${userId}`;
         const existingItem = await client.json.get(userKey, {
             path: `$.cart.items[?(@.productId=='${productId}')]`
         }) as CartItem[] | null;
@@ -44,7 +56,7 @@ export default class CartRepository {
      */
     async updateItemQuantity(userId: string, productId: string, newQuantity: number) {
         const client = await getRedisClient();
-        const userKey = `users:${userId}`;
+        const userKey = `${USER_KEY_PREFIX}${userId}`;
         await client.json.set(userKey, `$.cart.items[?(@.productId=='${productId}')].quantity`, newQuantity);
         await client.json.set(userKey, '$.cart.updatedAt', new Date().toISOString());
         await client.expire(userKey, 24 * 60 * 60);
@@ -59,7 +71,7 @@ export default class CartRepository {
      */
     async addNewItemToCart(userId: string, cartItem: CartItem) {
         const client = await getRedisClient();
-        const userKey = `users:${userId}`;
+        const userKey = `${USER_KEY_PREFIX}${userId}`;
 
         // Check if user document exists
         const userExists = await client.exists(userKey);
@@ -106,7 +118,7 @@ export default class CartRepository {
      */
     async getCartData(userId: string): Promise<Cart | null> {
         const client = await getRedisClient();
-        const userKey = `users:${userId}`;
+        const userKey = `${USER_KEY_PREFIX}${userId}`;
         const cartData = await client.json.get(userKey, { path: '$.cart' }) as Cart[] | null;
 
         if (!cartData || cartData.length === 0 || !cartData[0]) {
@@ -123,7 +135,7 @@ export default class CartRepository {
      */
     async removeFromCart(userId: string, productId: string) {
         const client = await getRedisClient();
-        const userKey = `users:${userId}`;
+        const userKey = `${USER_KEY_PREFIX}${userId}`;
         
         // Get current cart
         const cartData = await client.json.get(userKey, { path: '$.cart' }) as Cart[] | null;
@@ -166,7 +178,7 @@ export default class CartRepository {
      */
     async clearCart(userId: string) {
         const client = await getRedisClient();
-        const userKey = `users:${userId}`;
+        const userKey = `${USER_KEY_PREFIX}${userId}`;
         
         const cartData = await client.json.get(userKey, { path: '$.cart' }) as Cart[] | null;
 

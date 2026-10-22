@@ -144,52 +144,6 @@ export async function searchProducts({ query, category, maxPrice, minRating, lim
 }
 
 /**
- * Find products for a list of ingredient names
- * @param ingredientNames - Array of ingredient names
- * @returns Ingredient products with suggestions
- */
-export async function findProductsForIngredients(ingredientNames: string[]) {
-    console.log(`🚀 Searching for ${ingredientNames.length} ingredients in parallel...`);
-
-    // Parallel product searches for all ingredients
-    const searchPromises = ingredientNames.map(async (ingredientName) => {
-        const products = await findProductsBySemanticSearch(ingredientName, 1, 0.6);
-
-        if (products.length > 0) {
-            const product = products[0];
-
-            return {
-                ingredient: ingredientName,
-                suggestedProduct: {
-                    id: product.id,
-                    name: product.name,
-                    brand: product.brand || 'Generic',
-                    salePrice: product.salePrice,
-                    category: product.category,
-                    rating: product.rating,
-                }
-            };
-        } else {
-            console.log(`❌ No product found for: ${ingredientName}`);
-            return {
-                ingredient: ingredientName,
-                suggestedProduct: null
-            };
-        }
-    });
-
-    // Wait for all searches to complete in parallel
-    const ingredientProducts = await Promise.all(searchPromises);
-    console.log(`🎯 Completed ${ingredientProducts.length} ingredient searches in parallel`);
-
-    return {
-        totalIngredients: ingredientNames.length,
-        ingredientProducts: ingredientProducts,
-        message: "Here are the ingredients with quick product suggestions!"
-    };
-}
-
-/**
  * Get product by ID
  * @param productId - Product ID
  */

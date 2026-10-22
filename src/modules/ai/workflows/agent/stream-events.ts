@@ -8,11 +8,10 @@ const STEP_LABELS: Record<string, string> = {
     generate_suggested_follow_ups: "Lining up next steps…",
 
     search_products: "Searching products…",
-    find_recipe_ingredient_products: "Finding ingredients for your recipe…",
+    get_recipe_ingredients: "Finding ingredients for your recipe…",
     add_to_cart: "Adding to your cart…",
     view_cart: "Checking your cart…",
     clear_cart: "Emptying your cart…",
-    direct_answer: "Looking that up…",
     save_memory: "Noting that for next time…",
     search_my_memories: "Looking through what I remember…",
     view_recent_conversation: "Reading back our chat…",
@@ -20,6 +19,12 @@ const STEP_LABELS: Record<string, string> = {
 
 // Shown for a node or tool that has no label above
 const UNKNOWN_STEP_LABEL = "Working on it…";
+
+// What the shopper sees for every tool that comes from a source, by the "source" in the tool's metadata.
+// It takes the place of a label for each tool, since a source like Context Retriever generates its tools from the data model.
+const SOURCE_LABELS: Record<string, string> = {
+    "context-retriever": "Retrieving live context",
+};
 
 export type Step = { label: string; status: "started" | "finished"; durationMs?: number };
 
@@ -34,18 +39,22 @@ type StreamEvent = { method: string; params: { node?: string; data?: any } };
  * @param run - The stream returned by the graph's streamEvents
  * @param onToken - Called with each piece of the reply
  * @param onStep - Called when a step starts, and when it finishes with how long it took
+ * @param tools - The tools of the graph, to find out which source a tool comes from
  */
 export async function readRun(
     run: AsyncIterable<StreamEvent>,
     onToken: (text: string) => void,
-    onStep: (step: Step) => void
+    onStep: (step: Step) => void,
+    tools: { name: string; metadata?: Record<string, unknown> }[]
 ) {
     const startTimes = new Map<string, number>();
     const toolNames = new Map<string, string>();
+    const toolSources = new Map(tools.map((tool) => [tool.name, tool.metadata?.source as string | undefined]));
 
     // Reports a step starting, or finishing with how long it took since it started
     const reportStep = (key: string, name: string, status: Step["status"]) => {
-        const label = STEP_LABELS[name] ?? UNKNOWN_STEP_LABEL;
+        const source = toolSources.get(name);
+        const label = (source && SOURCE_LABELS[source]) ?? STEP_LABELS[name] ?? UNKNOWN_STEP_LABEL;
         if (status === "started") {
             startTimes.set(key, performance.now());
             onStep({ label, status });

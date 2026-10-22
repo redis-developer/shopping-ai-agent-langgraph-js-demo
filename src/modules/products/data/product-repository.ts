@@ -1,5 +1,9 @@
 import { getRedisClient } from '../../db/redis-client.ts';
 
+/** Products are stored as JSON under a key made of this prefix and the product ID */
+export const PRODUCT_KEY_PREFIX = 'products:';
+export const PRODUCT_KEY_TEMPLATE = `${PRODUCT_KEY_PREFIX}{id}`;
+
 /** A product as stored in Redis. The vector search only returns some of the fields. */
 export type Product = {
     id: string;
@@ -14,6 +18,7 @@ export type Product = {
     description?: string;
     discount?: number;
     isOnSale?: boolean | string;
+    productInfoEmbeddings?: number[];
     semanticScore?: number;
 };
 
@@ -53,7 +58,7 @@ export default class ProductRepository {
         const products: Product[] = [];
         for (const doc of results.documents) {
             const similarity = 1 - parseFloat(doc.value.score as string);
-            const productId = doc.id.replace('products:', '');
+            const productId = doc.id.replace(PRODUCT_KEY_PREFIX, '');
             products.push({
                 id: productId,
                 name: doc.value.name as string,
@@ -132,7 +137,7 @@ export default class ProductRepository {
      */
     async getProductById(productId: string): Promise<Product | null> {
         const client = await getRedisClient();
-        const product = await client.json.get(`products:${productId}`, { path: '$' }) as Product[] | null;
+        const product = await client.json.get(`${PRODUCT_KEY_PREFIX}${productId}`, { path: '$' }) as Product[] | null;
         return product ? product[0] : null;
     }
 
@@ -147,7 +152,7 @@ export default class ProductRepository {
         
         // Queue all requests
         productIds.forEach(id => {
-            pipeline.json.get(`products:${id}`, { path: '$' });
+            pipeline.json.get(`${PRODUCT_KEY_PREFIX}${id}`, { path: '$' });
         });
         
         const results = await pipeline.exec() as unknown as { result?: Product[] }[];

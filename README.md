@@ -111,7 +111,38 @@ npm run load-products      # load the sample groceries (first time only)
 
 If you switch providers, reload the products with `npm run load-products -- --drop`, so the stored vectors match the new provider's embeddings.
 
-### Step 6: Run and view the app
+### Step 6: Redis Context Retriever (optional)
+
+[Redis Context Retriever](https://redis.io/docs/latest/develop/ai/context-engine/context-retriever/) turns the product catalog and the shoppers' carts into search tools for the agent. With it set up, the agent uses those tools in place of its own `search_products` and `view_cart`. Without it, the agent uses its own tools.
+
+1. Get the Context Retriever API URL and an admin key from the Redis Cloud console, and add them to your `.env` file:
+
+```bash
+CONTEXT_RETRIEVER_SERVER_URL="your_context_retriever_api_url"
+CONTEXT_RETRIEVER_ADMIN_KEY="your_context_retriever_admin_key"
+```
+
+  The service is called `redish`. Names must be unique, so set `CONTEXT_RETRIEVER_SERVICE_NAME` if you need another one.
+
+2. With the products loaded (Step 5), create the context surface. It's defined by hand from the `Product` and `UserDocument` types in [product-entity.ts](src/modules/ai/context-retriever/entities/product-entity.ts) and [cart-entity.ts](src/modules/ai/context-retriever/entities/cart-entity.ts). The script waits until the surface is active, then prints the MCP URL and an agent key:
+
+```bash
+npm run setup-context-retriever
+```
+
+3. Add the two values it printed to `.env`, and restart the app. The app logs the tools it found when it starts.
+
+If you lose the agent key, run `npm run setup-context-retriever -- --new-key`. It finds the service by its name and prints a new key, without changing the service. The old key keeps working until you delete it.
+
+```bash
+CONTEXT_RETRIEVER_MCP_URL="your_context_surface_mcp_url"
+CONTEXT_RETRIEVER_AGENT_KEY="your_context_surface_agent_key"
+```
+
+The products' vector search in Context Retriever uses 1536-dimension vectors, so it works with `AI_PROVIDER="openai"` only.
+
+
+### Step 7: Run and view the app
 
 ```bash
 npm start # Starts the app
@@ -221,6 +252,7 @@ src/
           │   ├── index.ts           # Loads the chosen provider
           │   ├── openai/            # Chat model, embeddings, sanitizing
           │   └── aws-bedrock/       # Same, plus guardrails
+          ├── context-retriever/  # The Context Retriever connection, its tools for the agent, and the admin API to set up the service
           ├── workflows/agent/    # The LangGraph shopping agent
           │   ├── tools/             # Interface layer
           │   │   ├── shopping-tools.ts  # Products, cart and cooking-knowledge tools

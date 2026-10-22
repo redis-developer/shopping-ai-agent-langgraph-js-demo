@@ -4,7 +4,7 @@ import { HumanMessage } from "@langchain/core/messages";
 import { z } from "zod";
 
 // Import service functions
-import { findProductsForIngredients, searchProducts } from '../../../../products/domain/product-service.ts';
+import { searchProducts } from '../../../../products/domain/product-service.ts';
 import { addItemsToCart, getCart, clearCart } from '../../../../cart/domain/cart-service.ts';
 import { createChatModel } from '../../../providers/index.ts';
 
@@ -48,48 +48,32 @@ Rules:
 }
 
 /**
- * Tool: Recipe Ingredient Products
- * Provides the ingredient list for a recipe with ONE suggested product per ingredient
+ * Tool: Recipe Ingredients
+ * Provides the essential ingredients for a recipe, with their quantities. The agent then finds a product for each one.
  */
-export const recipeIngredientProductsTool = tool(
+export const recipeIngredientsTool = tool(
     async ({ recipe }) => {
-        console.log(`🍳 Recipe ingredient products for: "${recipe}"`);
+        console.log(`🍳 Recipe ingredients for: "${recipe}"`);
 
         try {
-            // First extract ingredients from LLM
             const ingredientsData = await getIngredientsFromLLM(recipe);
 
-            // Get essential ingredient names only
+            // Essential ingredients only
             const essentialIngredients = ingredientsData.ingredients.filter(ing => ing.essential).slice(0, 6);
-            const ingredientNames = essentialIngredients.map(ing => ing.name);
 
-            // Find products for those ingredients
-            const result = await findProductsForIngredients(ingredientNames);
-
-            // Add back the quantities from the LLM response
-            const enrichedProducts = result.ingredientProducts.map(item => {
-                const originalIngredient = essentialIngredients.find(ing => ing.name === item.ingredient);
-                return {
-                    ...item,
-                    quantity: originalIngredient?.quantity || 'as needed'
-                };
-            });
-
-            console.log(`🍽️ Found products for ingredients:`);
-            enrichedProducts.forEach(item => {
-                console.log(`- ${item.ingredient} (Quantity: ${item.quantity})`);
+            console.log(`🍽️ Ingredients:`);
+            essentialIngredients.forEach(item => {
+                console.log(`- ${item.name} (Quantity: ${item.quantity})`);
             });
 
             return {
                 success: true,
                 recipe: ingredientsData.recipe || recipe,
-                totalIngredients: result.totalIngredients,
-                ingredientProducts: enrichedProducts,
-                message: result.message
+                ingredients: essentialIngredients.map(({ name, quantity }) => ({ name, quantity }))
             };
 
         } catch (error) {
-            console.error('Error in fast recipe ingredients:', error);
+            console.error('Error in recipe ingredients:', error);
             return {
                 success: false,
                 error: `Sorry, I had trouble getting ingredients for "${recipe}". Please try rephrasing.`
@@ -97,62 +81,10 @@ export const recipeIngredientProductsTool = tool(
         }
     },
     {
-        name: "find_recipe_ingredient_products",
-        description: "Get the ingredients for a recipe, with ONE suggested catalog product per ingredient. Use this first for recipe/ingredient questions, such as \"ingredients for butter chicken\" or \"what do I need to make [dish]\". Much faster than searching for each ingredient separately.",
+        name: "get_recipe_ingredients",
+        description: "Get the essential ingredients of a recipe or dish, with the quantity of each. Use this first for recipe/ingredient questions, such as \"ingredients for butter chicken\" or \"what do I need to make [dish]\". It returns ingredient names only, with no products, so then look up a product for each ingredient with the product tools if the user has asked for it.",
         schema: z.object({
             recipe: z.string().describe("The recipe or dish name to get ingredients for")
-        })
-    }
-);
-
-/**
- * Tool: Direct Answer
- * Returns structured data with the answer content
- */
-export const directAnswerTool = tool(
-    async ({ question }) => {
-        console.log(`Direct LLM answer for: "${question}"`);
-
-        try {
-            // Direct LLM call for general questions
-            const model = createChatModel({ temperature: 0.2, disableStreaming: true });
-
-            const systemPrompt = `You are a knowledgeable grocery shopping and cooking assistant. Answer questions about:
-- Cooking methods and techniques
-- Food storage and preparation tips
-- Nutritional information and health benefits
-- Spices, seasonings, and flavor combinations
-- Grocery shopping advice and tips
-- Indian cuisine and cooking techniques
-
-Provide helpful, accurate information based on your knowledge. Keep responses concise and practical.
-Do not mention specific product prices or brands - focus on general knowledge and advice.`;
-
-            const response = await model.invoke([
-                { role: "system", content: systemPrompt },
-                new HumanMessage(question)
-            ]);
-
-            return {
-                success: true,
-                content: response.text,
-                question: question
-            };
-
-        } catch (error) {
-            console.error('Error in direct answer:', error);
-            return {
-                success: false,
-                error: `Sorry, I had trouble answering your question about "${question}". Please try rephrasing.`,
-                question: question
-            };
-        }
-    },
-    {
-        name: "direct_answer",
-        description: "Answer general grocery, cooking, and food-related questions using knowledge. Use for cooking tips, techniques, food storage, preparation methods, and nutrition info. Not for recipe ingredient lists.",
-        schema: z.object({
-            question: z.string().describe("The grocery/cooking question to answer")
         })
     }
 );
@@ -339,10 +271,14 @@ export const clearCartTool = tool(
 );
 
 export const shoppingTools = [
-    recipeIngredientProductsTool,
-    searchProductsTool,
+    recipeIngredientsTool,
     addToCartTool,
-    viewCartTool,
     clearCartTool,
-    directAnswerTool,
+];
+
+// The hand-written tools to query the entities (search products, view the cart). The agent uses them only when
+// Context Retriever is not set up, since the tools that it generates do the same.
+export const entityQueryTools = [
+    searchProductsTool,
+    viewCartTool,
 ];

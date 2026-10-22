@@ -9,7 +9,7 @@ import type { Step } from "./stream-events.ts";
 import type { ShoppingAgentStateType } from "./state.ts";
 import { toolsCondition } from "@langchain/langgraph/prebuilt";
 
-import { queryCacheCheck, frontDeskAgent, personalShopperAgent, processWorkOutputWithCaching, generateSuggestedFollowUps, retrieveLongTermMemories, toolNode } from "./nodes.ts";
+import { queryCacheCheck, frontDeskAgent, personalShopperAgent, processWorkOutputWithCaching, generateSuggestedFollowUps, retrieveLongTermMemories, toolNode, allTools } from "./nodes.ts";
 
 import { getWorkingMemory, addConversationTurn } from "../../../chat/domain/agent-memory-service.ts";
 import { UsageCallbackHandler } from "../../helpers/usage-callback-handler.ts";
@@ -100,12 +100,11 @@ export function getWorkflowExecutionSummary(graphResult: ShoppingAgentStateType)
     } else {
         const toolIcons = summary.toolsUsed.map(tool => {
             switch(tool) {
-                case "direct_answer": return "🧠 Direct Knowledge";
                 case "search_products": return "🔍 Product Search";
                 case "add_to_cart": return "🛒 Add to Cart";
                 case "view_cart": return "👀 View Cart";
                 case "clear_cart": return "🗑️ Clear Cart";
-                case "find_recipe_ingredient_products": return "🍳 Recipe Ingredients";
+                case "get_recipe_ingredients": return "🍳 Recipe Ingredients";
                 case "save_to_semantic_cache": return "💾 Save Cache";
                 case "error": return "❌ Error";
                 default: return `🔧 ${tool}`;
@@ -174,7 +173,7 @@ export async function runShoppingAgentWorkflow(
         configurable: { userId, sessionId }
     });
 
-    await readRun(run, onToken, onStep);
+    await readRun(run, onToken, onStep, allTools);
     const result = await run.output;
 
     // Get execution summary for logging

@@ -40,6 +40,15 @@ const CONFIG = {
     // Optional: ID of a namespace resource to scope sessions / long-term memories
     agentMemoryNamespaceId: process.env.AGENT_MEMORY_NAMESPACE_ID,
 
+    // Redis Context Retriever Configuration (@redis-iris/context-retriever). Optional: without the MCP URL and agent key the agent uses only its own tools.
+    // The server URL and admin key are only used by the setup script (npm run setup-context-retriever).
+    contextRetrieverServerUrl: process.env.CONTEXT_RETRIEVER_SERVER_URL,
+    contextRetrieverAdminKey: process.env.CONTEXT_RETRIEVER_ADMIN_KEY,
+    // The name must be unique, so choose another one if "redish" is already taken
+    contextRetrieverServiceName: process.env.CONTEXT_RETRIEVER_SERVICE_NAME || 'redish',
+    contextRetrieverMcpUrl: process.env.CONTEXT_RETRIEVER_MCP_URL,
+    contextRetrieverAgentKey: process.env.CONTEXT_RETRIEVER_AGENT_KEY,
+
     appName: process.env.APP_NAME,
 
     // Used for the GitHub links in the pages. Set GITHUB_URL if you run your own fork.

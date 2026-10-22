@@ -14,7 +14,6 @@ flowchart TD
             RecipeTool["Recipe Ingredients"]
             SearchTool["Product Search"]
             CartTool["Cart Management"]
-            AnswerTool["Direct Answer"]
             MemoryTools["Memory Tools"]
         end
     end
@@ -63,7 +62,6 @@ flowchart TD
     e7@{ animate: true }
 
     %% Internal connections
-    RecipeTool <-.-> ProductService
     SearchTool <-.-> ProductService
     CartTool <-.-> CartService
     MemoryTools <-.-> AgentMemory
@@ -80,7 +78,7 @@ flowchart TD
     classDef red fill:transparent,color:#ff4438,stroke:#ff4438,stroke-width:2px, stroke-dasharray: 5 5
     classDef blue fill:transparent,color:#80dbff,stroke:#80dbff,stroke-width:2px, font-weight: bold, stroke-dasharray: 5 5
 
-    class User,CacheCheck,RetrieveMemories,ShoppingAgent,SaveCache,SemanticCache,VectorStore,UserCart,AgentMemory,RecipeTool,SearchTool,CartTool,AnswerTool,MemoryTools,CartService,ProductService,ChatService nodeStyle
+    class User,CacheCheck,RetrieveMemories,ShoppingAgent,SaveCache,SemanticCache,VectorStore,UserCart,AgentMemory,RecipeTool,SearchTool,CartTool,MemoryTools,CartService,ProductService,ChatService nodeStyle
     class End,LangGraph,RedisCache,AITools subgraphStyle
     class LangGraph purple
     class RedisCache red

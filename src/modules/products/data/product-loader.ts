@@ -3,6 +3,7 @@ import { SCHEMA_FIELD_TYPE, SCHEMA_VECTOR_FIELD_ALGORITHM } from 'redis';
 import { readFileSync } from 'fs';
 import { parse } from 'csv-parse/sync';
 import { getRedisClient } from '../../db/redis-client.ts';
+import { PRODUCT_KEY_PREFIX } from './product-repository.ts';
 
 import { embed, embeddingDimensions } from '../../ai/providers/index.ts';
 
@@ -67,7 +68,7 @@ async function createProductIndex(dropExisting = false) {
             }
         }, {
             ON: 'JSON',
-            PREFIX: 'products:'
+            PREFIX: PRODUCT_KEY_PREFIX
         });
         console.log('✅ Search index created successfully');
     } catch (e) {
@@ -149,7 +150,7 @@ export async function loadProductsFromCSV(csvFilePath: string, batchSize = 50, m
 
         // Clear existing data first (optional)
         console.log('🧹 Clearing existing product data...');
-        const existingKeys = await client.keys('products:*');
+        const existingKeys = await client.keys(`${PRODUCT_KEY_PREFIX}*`);
         if (existingKeys.length > 0) {
             // Delete in chunks to avoid memory issues
             for (let i = 0; i < existingKeys.length; i += 1000) {
@@ -197,7 +198,7 @@ export async function loadProductsFromCSV(csvFilePath: string, batchSize = 50, m
                     productInfoEmbeddings: embedding,
                 };
                 
-                pipeline.json.set(`products:${product.id}`, '$', productData);
+                pipeline.json.set(`${PRODUCT_KEY_PREFIX}${product.id}`, '$', productData);
                 
                 categories.add(product.category);
                 brands.add(product.brand);

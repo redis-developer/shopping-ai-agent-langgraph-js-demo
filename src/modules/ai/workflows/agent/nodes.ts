@@ -1,8 +1,9 @@
 import { AIMessage, HumanMessage } from "@langchain/core/messages";
 import { z } from "zod";
 import { ToolNode } from "@langchain/langgraph/prebuilt";
-import { shoppingTools } from "./tools/shopping-tools.ts";
+import { shoppingTools, entityQueryTools } from "./tools/shopping-tools.ts";
 import { memoryTools } from "./tools/memory-tools.ts";
+import { getContextRetrieverTools } from "../../context-retriever/index.ts";
 import { checkSemanticCache, saveToSemanticCache } from "../../../chat/domain/knowledge-bank-service.ts";
 import { determineToolBasedCacheTTL } from "../../helpers/caching.ts";
 import { searchShopperPreferences } from "../../../chat/domain/agent-memory-service.ts";
@@ -11,7 +12,16 @@ import type { Attachment } from "../../../chat/domain/attachments.ts";
 import type { ShoppingAgentStateType } from "./state.ts";
 import { createChatModel, sanitizeForCache, guardrails } from "../../providers/index.ts";
 
-const allTools = [...shoppingTools, ...memoryTools];
+// The tools of the Context Retriever surface, loaded once when the app starts. Empty when it is not set up.
+const contextRetrieverTools = await getContextRetrieverTools();
+
+// Without Context Retriever, the agent needs its own tools to query the entities
+const ownEntityQueryTools = contextRetrieverTools.length > 0 ? [] : entityQueryTools;
+
+export const allTools = [...shoppingTools, ...ownEntityQueryTools, ...memoryTools, ...contextRetrieverTools];
+
+// Where each tool comes from, by its metadata. Whether a reply can be cached depends on it.
+const toolSources = new Map(allTools.map((agentTool) => [agentTool.name, agentTool.metadata?.source as string | undefined]));
 
 const suggestedFollowUpsSchema = z.object({
     followUps: z.array(z.string()).describe("Up to 3 short messages the shopper could send next")
@@ -22,7 +32,6 @@ type ToolProduct = { id: string; name: string; salePrice: number; category: stri
 type ToolResult = {
     success?: boolean;
     products?: ToolProduct[];
-    ingredientProducts?: { suggestedProduct: ToolProduct | null }[];
 };
 
 /**
@@ -141,13 +150,20 @@ export const personalShopperAgent = async (state: ShoppingAgentStateType) => {
         ? `\n**Summary of the earlier conversation in this session:**\n${state.conversationSummary}\n`
         : "";
 
+    // The Context Retriever tools filter carts by user ID, so the agent needs to know this shopper's
+    const shopperIdBlock = contextRetrieverTools.length > 0
+        ? `\n**This shopper's user ID is ${state.userId}.** When you look up the cart, only look at the cart of this user ID.\n`
+        : "";
+
     const systemPrompt = `You are a helpful grocery shopping assistant. Use your tools to find recipe ingredients, search for products and groceries, manage the cart, and answer cooking questions.
-${userContextBlock}${conversationSummaryBlock}
+${shopperIdBlock}${userContextBlock}${conversationSummaryBlock}
 
 **Response formatting:**
 - Tool results are JSON. Present them in plain language, never as raw JSON.
 - Show each product in exactly this format: **Product Name** by Brand (ID: 12345) - ₹Price
-- For recipe ingredients, list each ingredient with its quantity, in order (the cards of the products found appear below in the same order), then offer: "Want more options for any ingredient? Just ask!"
+- For a recipe, get its ingredients, then search for one product for each ingredient (ask for just 1 result per ingredient). List each ingredient with its quantity and its product, in order (the cards of the products found appear below in the same order), then offer: "Want more options for any ingredient? Just ask!"
+- For cooking methods and techniques, food storage and preparation, nutrition, spices and flavour combinations, shopping tips and Indian cuisine, answer directly from your own knowledge, concisely and practically.
+- Never state prices, brands or product IDs unless they come from a tool. To know the actual product ID of a product, look it up with the product tools.
 - Use emojis and clear structure. Keep responses helpful, fast, and easy to interact with.`;
 
     const modelWithTools = model.bindTools(allTools);
@@ -208,13 +224,10 @@ export const processWorkOutputWithCaching = async (state: ShoppingAgentStateType
             return { toolName: toolMessage.name as string, result };
         });
 
-    // Products the tools found this turn (product search and recipe ingredient results)
+    // Products the tools found this turn
     const attachments: Attachment[] = [];
     for (const { result } of toolMessages) {
-        const products = [
-            ...(result.products || []),
-            ...(result.ingredientProducts || []).map((item) => item.suggestedProduct).filter(Boolean) as ToolProduct[]
-        ];
+        const products = result.products || [];
         for (const product of products) {
             if (!attachments.some((attachment) => attachment.data.id === product.id)) {
                 attachments.push({
@@ -232,7 +245,7 @@ export const processWorkOutputWithCaching = async (state: ShoppingAgentStateType
     }
 
     // Determine cache TTL based on tool execution results
-    const toolResults = toolMessages.map(({ toolName, result }) => ({ toolName, success: result.success !== false }));
+    const toolResults = toolMessages.map(({ toolName, result }) => ({ toolName, success: result.success !== false, source: toolSources.get(toolName) }));
     const cacheTTL = determineToolBasedCacheTTL(toolResults);
 
     // Don't cache if TTL is 0 (personal/dynamic operations or failures)
