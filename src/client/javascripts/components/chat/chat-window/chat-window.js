@@ -120,7 +120,7 @@ export class ChatWindow {
         this.streamingReply = null;
         this.replyFooter = null;
         if (this.messagesContainer) {
-            this.messagesContainer.innerHTML = '';
+            this.messagesContainer.replaceChildren();
         }
     }
 

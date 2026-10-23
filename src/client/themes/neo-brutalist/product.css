@@ -45,10 +45,6 @@ legend {
     margin-bottom: 2rem;
 }
 
-.view-btn {
-    text-transform: uppercase;
-}
-
 /* Shown inside the home page: its own header is used instead */
 .embedded .header,
 .embedded .site-footer {
@@ -485,32 +481,6 @@ legend {
         text-transform: uppercase;
         letter-spacing: 1px;
     }
-}
-
-/* Related Products */
-.related-products {
-    background: var(--white);
-    border: var(--border);
-    box-shadow: var(--shadow);
-    padding: 2rem;
-    margin-top: 3rem;
-
-    & h3 {
-        font-family: var(--font-display);
-        font-size: 2rem;
-        font-weight: 400;
-        color: var(--dark);
-        margin: 0 0 2rem 0;
-        text-align: center;
-        text-transform: uppercase;
-        letter-spacing: 2px;
-    }
-}
-
-.products-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 2rem;
 }
 
 .product-actions {

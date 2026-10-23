@@ -7,35 +7,35 @@ export class CartButton {
     }
 
     async addToCartFromChat(userId, productId, buttonElement) {
-        const originalContent = buttonElement.innerHTML;
+        const originalContent = buttonElement.textContent;
 
         await addToCart(userId, productId, 1, {
             onLoad: () => {
-                buttonElement.innerHTML = '⏳';
+                buttonElement.textContent = '⏳';
                 buttonElement.disabled = true;
             },
             onSuccess: (result) => {
-                buttonElement.innerHTML = '✅';
+                buttonElement.textContent = '✅';
 
                 if (this.onSuccess) {
                     this.onSuccess(result);
                 }
 
                 setTimeout(() => {
-                    buttonElement.innerHTML = originalContent;
+                    buttonElement.textContent = originalContent;
                     buttonElement.disabled = false;
                 }, 2000);
             },
             onError: (error) => {
                 console.error('Error adding to cart:', error);
-                buttonElement.innerHTML = '❌';
+                buttonElement.textContent = '❌';
 
                 if (this.onError) {
                     this.onError(error);
                 }
 
                 setTimeout(() => {
-                    buttonElement.innerHTML = originalContent;
+                    buttonElement.textContent = originalContent;
                     buttonElement.disabled = false;
                 }, 2000);
             }

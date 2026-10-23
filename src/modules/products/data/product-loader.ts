@@ -71,11 +71,11 @@ async function createProductIndex(dropExisting = false) {
             PREFIX: PRODUCT_KEY_PREFIX
         });
         console.log('✅ Search index created successfully');
-    } catch (e) {
-        if ((e as Error).message === 'Index already exists') {
+    } catch (error) {
+        if ((error as Error).message === 'Index already exists') {
             console.log('📋 Search index exists already, skipped creation.');
         } else {
-            console.error('❌ Error creating search index:', e);
+            console.error('❌ Error creating search index:', error);
         }
     }
 }

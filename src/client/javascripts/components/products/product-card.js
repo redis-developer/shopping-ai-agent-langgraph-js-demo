@@ -7,31 +7,31 @@ export class ProductCard {
     init() {
         const addBtns = document.querySelectorAll('.add-btn');
         addBtns.forEach(btn => {
-            btn.addEventListener('click', (e) => this.handleProductAdd(e));
+            btn.addEventListener('click', (event) => this.handleProductAdd(event));
         });
 
         const categoryCards = document.querySelectorAll('.category-card');
         categoryCards.forEach(card => {
-            card.addEventListener('click', (e) => this.handleCategoryClick(e));
+            card.addEventListener('click', (event) => this.handleCategoryClick(event));
         });
     }
 
-    handleProductAdd(e) {
-        e.preventDefault();
-        const productCard = e.target.closest('.product-card');
+    handleProductAdd(event) {
+        event.preventDefault();
+        const productCard = event.target.closest('.product-card');
         const productName = productCard.querySelector('h4').textContent;
 
         if (this.onProductAdd) {
             this.onProductAdd(productName);
         }
 
-        const button = e.currentTarget;
+        const button = event.currentTarget;
         button.classList.add('pulse');
         setTimeout(() => button.classList.remove('pulse'), 150);
     }
 
-    handleCategoryClick(e) {
-        const categoryName = e.currentTarget.querySelector('span').textContent;
+    handleCategoryClick(event) {
+        const categoryName = event.currentTarget.querySelector('span').textContent;
 
         if (this.onProductAdd) {
             this.onProductAdd(null, categoryName);

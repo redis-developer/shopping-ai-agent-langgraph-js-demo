@@ -22,9 +22,7 @@ export const DOM_IDS = {
     TYPING_INDICATOR_TEMPLATE: 'typing-indicator-template',
     NEW_CHAT_MESSAGE_TEMPLATE: 'new-chat-message-template',
     REPLY_FOOTER_TEMPLATE: 'reply-footer-template',
-    SUGGESTION_TEMPLATE: 'suggestion-template',
-    RELATED_PRODUCT_TEMPLATE: 'related-product-template',
-    RELATED_PLACEHOLDER_TEMPLATE: 'related-placeholder-template'
+    SUGGESTION_TEMPLATE: 'suggestion-template'
 };
 
 export const CSS_SELECTORS = {

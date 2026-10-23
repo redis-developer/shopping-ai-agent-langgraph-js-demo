@@ -8,12 +8,12 @@ export class SearchBar {
 
     init() {
         if (this.form) {
-            this.form.addEventListener('submit', (e) => this.handleSubmit(e));
+            this.form.addEventListener('submit', (event) => this.handleSubmit(event));
         }
     }
 
-    handleSubmit(e) {
-        e.preventDefault();
+    handleSubmit(event) {
+        event.preventDefault();
         const query = this.input.value.trim();
 
         if (!query) return;

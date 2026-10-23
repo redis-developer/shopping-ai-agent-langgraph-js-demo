@@ -36,9 +36,8 @@ export default class ProductRepository {
      * Perform vector search using pre-generated embeddings
      * @param searchVector - Pre-generated embedding vector
      * @param limit - Number of results to return
-     * @param threshold - Similarity threshold (0-1, default: 0.7)
      */
-    async vectorSearchProducts(searchVector: number[], limit = 10, threshold = 0.5): Promise<Product[]> {
+    async vectorSearchProducts(searchVector: number[], limit = 10): Promise<Product[]> {
         const client = await getRedisClient();
         // Convert embedding to bytes for Redis
         const vectorBytes = Buffer.from(new Float32Array(searchVector).buffer);
@@ -50,7 +49,7 @@ export default class ProductRepository {
             PARAMS: {
                 vector: vectorBytes
             },
-            RETURN: ['id', 'name', 'brand', 'category', 'price', 'salePrice', 'marketPrice', 'rating', 'score', 'isOnSale'],
+            RETURN: ['id', 'name', 'brand', 'category', 'salePrice', 'marketPrice', 'rating', 'score', 'isOnSale'],
             DIALECT: 2,
             LIMIT: { from: 0, size: limit }
         });
@@ -97,7 +96,7 @@ export default class ProductRepository {
         }
         
         if (maxPrice) {
-            filters.push(`@price:[0 ${maxPrice}]`);
+            filters.push(`@salePrice:[0 ${maxPrice}]`);
         }
         
         if (minRating) {

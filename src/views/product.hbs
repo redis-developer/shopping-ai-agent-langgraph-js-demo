@@ -43,7 +43,7 @@
                     <i class="fas fa-shopping-cart"></i>
                     <span class="cart-count">0</span>
                 </p>
-                {{> github-link}}
+                {{> github_link}}
             </div>
         </div>
     </header>
@@ -58,7 +58,7 @@
                 </div>
             </figure>
 
-            <div class="product-info-section" data-product-id="{{product.id}}" data-product-category="{{product.category}}">
+            <div class="product-info-section" data-product-id="{{product.id}}">
                 <header class="product-header">
                     <h2 class="product-title">{{product.name}}</h2>
                     {{#if product.brand}}
@@ -114,42 +114,14 @@
                     
                     <button type="submit" class="add-to-cart-btn">
                         <i class="fas fa-shopping-cart"></i>
-                        Add to cart
+                        <span class="add-to-cart-label">Add to cart</span>
                     </button>
                 </form>
             </div>
         </article>
-
-        <!-- Related Products Section -->
-        <aside class="related-products" aria-labelledby="related-heading">
-            <h3 id="related-heading">You might also like</h3>
-            <ul id="related-products-grid" class="products-grid">
-                <!-- Related products will be loaded here -->
-            </ul>
-
-            <!-- Cards in the related products grid -->
-            <template id="related-product-template">
-                <li class="product-card">
-                    <figure class="product-image">
-                        <span class="product-emoji"></span>
-                    </figure>
-                    <div class="product-info">
-                        <h4></h4>
-                        <p class="product-price"></p>
-                        <a class="view-btn">View product</a>
-                    </div>
-                </li>
-            </template>
-
-            <template id="related-placeholder-template">
-                <li class="placeholder-message">
-                    <p>Related products feature coming soon!</p>
-                </li>
-            </template>
-        </aside>
     </main>
 
-    {{> site-footer}}
+    {{> site_footer}}
 
     <!-- Success/Error Messages -->
     <div id="notification-container"></div>

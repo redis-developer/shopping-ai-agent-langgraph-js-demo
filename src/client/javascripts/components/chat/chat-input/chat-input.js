@@ -8,12 +8,12 @@ export class ChatInput {
 
     init() {
         if (this.form) {
-            this.form.addEventListener('submit', (e) => this.handleSubmit(e));
+            this.form.addEventListener('submit', (event) => this.handleSubmit(event));
         }
     }
 
-    handleSubmit(e) {
-        e.preventDefault();
+    handleSubmit(event) {
+        event.preventDefault();
         const message = this.input.value.trim();
 
         if (!message) return;

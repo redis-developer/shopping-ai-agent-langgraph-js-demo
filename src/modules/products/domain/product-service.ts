@@ -39,15 +39,14 @@ export function getProductImage(category: string) {
  * Find products using semantic search
  * @param query - Search query
  * @param limit - Maximum number of results
- * @param threshold - Similarity threshold
  */
-export async function findProductsBySemanticSearch(query: string, limit = 8, threshold = 0.6) {
+export async function findProductsBySemanticSearch(query: string, limit = 8) {
     // Generate embedding for the search query
     const queryEmbeddings = await embed([query]);
     const searchVector = queryEmbeddings[0];
 
     // Use repository for pure data operations
-    const products = await productRepository.vectorSearchProducts(searchVector, limit, threshold);
+    const products = await productRepository.vectorSearchProducts(searchVector, limit);
     return products;
 }
 
@@ -73,8 +72,8 @@ export async function searchProducts({ query, category, maxPrice, minRating, lim
 
     // Search strategy decision
     if (query && useSemanticSearch) {
-        console.log('🧠 Using semantic search...');
-        products = await findProductsBySemanticSearch(query, limit * 2, 0.6); // Lower threshold, get more results
+        console.log('✨🔎 Using semantic search...');
+        products = await findProductsBySemanticSearch(query, limit * 2); // Ask for more than needed, so the filters below still leave enough
     }
 
     // Fallback to keyword search if semantic search returns few results
@@ -84,7 +83,7 @@ export async function searchProducts({ query, category, maxPrice, minRating, lim
 
         // Merge results, avoiding duplicates
         keywordResults.forEach(product => {
-            if (!products.find(p => p.id === product.id)) {
+            if (!products.find(existingProduct => existingProduct.id === product.id)) {
                 products.push(product);
             }
         });
@@ -92,25 +91,25 @@ export async function searchProducts({ query, category, maxPrice, minRating, lim
 
     // Apply filters
     if (category) {
-        products = products.filter(p =>
-            p.category.toLowerCase().includes(category.toLowerCase())
+        products = products.filter(product =>
+            product.category.toLowerCase().includes(category.toLowerCase())
         );
     }
 
     if (maxPrice) {
-        products = products.filter(p => p.salePrice <= maxPrice);
+        products = products.filter(product => product.salePrice <= maxPrice);
     }
 
     if (minRating) {
-        products = products.filter(p => (p.rating || 0) >= minRating);
+        products = products.filter(product => (product.rating || 0) >= minRating);
     }
 
     // Sort by relevance (semantic score or rating)
-    products.sort((a, b) => {
-        if (a.semanticScore && b.semanticScore) {
-            return b.semanticScore - a.semanticScore;
+    products.sort((firstProduct, secondProduct) => {
+        if (firstProduct.semanticScore && secondProduct.semanticScore) {
+            return secondProduct.semanticScore - firstProduct.semanticScore;
         }
-        return (b.rating || 0) - (a.rating || 0);
+        return (secondProduct.rating || 0) - (firstProduct.rating || 0);
     });
 
     // Apply limit
@@ -129,7 +128,7 @@ export async function searchProducts({ query, category, maxPrice, minRating, lim
         description: product.description ? product.description.substring(0, 100) : '',
         semanticScore: product.semanticScore || null,
         isOnSale: product.isOnSale || false,
-        productUrl: `/product/${product.id}` // Add navigation URL
+        productUrl: `/products/${product.id}` // Add navigation URL
     }));
 
     // Calculate summary metrics

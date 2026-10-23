@@ -1,7 +1,7 @@
 {
   "name": "shopping-ai-agent-langgraph-js-demo",
   "version": "1.0.0",
-  "description": "Shopping AI Agent demo that uses Redis's speed for personalized recipe recommendations, smart product suggestions, and lightning-fast responses through semantic caching",
+  "description": "An agentic AI grocery shopping assistant built with LangGraph.js and Redis. A learning-focused demo of agent memory, RAG and agentic RAG, semantic caching and live context retrieval, with a swappable AI provider.",
   "private": true,
   "workspaces": [
     "src/modules/ai/providers/*"
@@ -23,14 +23,27 @@
   "keywords": [
     "redis",
     "shopping",
-    "ai",
-    "aws-bedrock",
     "ecommerce",
+    "ai",
+    "ai-agent",
+    "agentic-ai",
+    "llm",
     "langgraph",
     "langchain",
-    "ai-agent",
+    "openai",
+    "aws-bedrock",
+    "agent-memory",
+    "long-term-memory",
+    "rag",
+    "agentic-rag",
+    "semantic-caching",
+    "vector-search",
+    "embeddings",
+    "tool-calling",
+    "context-retrieval",
+    "mcp",
     "demo",
-    "javascript",
+    "typescript",
     "nodejs"
   ],
   "author": "Ashwin Hariharan",
@@ -45,7 +58,6 @@
     "csv-parse": "^7.0.3",
     "dotenv": "18.0.8",
     "express": "~5.3.0",
-    "express-handlebars": "^9.0.2",
     "hbs": "~4.4.0",
     "langsmith": "^0.11.0",
     "morgan": "~1.12.1",
@@ -55,9 +67,9 @@
   "devDependencies": {
     "@types/cookie-parser": "^1.4.10",
     "@types/express": "^5.0.6",
+    "@types/hbs": "^4.0.5",
     "@types/morgan": "^1.9.10",
     "@types/node": "^26.6.5",
-    "concurrently": "^10.0.6",
     "typescript": "^7.0.2"
   }
 }

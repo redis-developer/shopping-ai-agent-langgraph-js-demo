@@ -7,12 +7,10 @@ import { CartButton } from '@components/cart/cart-button.js';
 import { NotificationSystem } from '@components/notifications/notification-system.js';
 
 import { ProductQuantity } from '@components/products/product-quantity.js';
-import { RelatedProducts } from '@components/products/related-products.js';
 
 export class ProductApp {
-    constructor(productId, productCategory) {
+    constructor(productId) {
         this.productId = productId;
-        this.productCategory = productCategory;
         this.sessionService = new SessionService();
         this.init();
     }
@@ -30,7 +28,6 @@ export class ProductApp {
         );
 
         this.productQuantity = new ProductQuantity('quantity', 1, 10);
-        this.relatedProducts = new RelatedProducts('related-products-grid');
 
         // Setup event handlers
         this.setupEventHandlers();
@@ -51,16 +48,16 @@ export class ProductApp {
         // Add to cart form
         const addToCartForm = document.querySelector('.product-actions');
         if (addToCartForm) {
-            addToCartForm.addEventListener('submit', (e) => this.handleAddToCart(e));
+            addToCartForm.addEventListener('submit', (event) => this.handleAddToCart(event));
         }
 
         // Also handle the direct button click (fallback)
         const addToCartBtn = document.querySelector('.add-to-cart-btn');
         if (addToCartBtn) {
             addToCartBtn.removeAttribute('onclick');
-            addToCartBtn.addEventListener('click', (e) => {
-                if (e.target.type !== 'submit') {
-                    this.handleAddToCart(e);
+            addToCartBtn.addEventListener('click', (event) => {
+                if (event.target.type !== 'submit') {
+                    this.handleAddToCart(event);
                 }
             });
         }
@@ -69,46 +66,49 @@ export class ProductApp {
     async loadInitialData() {
         // Load cart count
         await this.cartCount.load(this.userId);
-
-        // Load related products
-        if (this.productCategory) {
-            await this.relatedProducts.load(this.productCategory, this.productId);
-        }
     }
 
-    async handleAddToCart(e) {
-        e.preventDefault();
+    async handleAddToCart(event) {
+        event.preventDefault();
 
         const addBtn = document.querySelector('.add-to-cart-btn');
-        const originalContent = addBtn.innerHTML;
+        const icon = addBtn.querySelector('i');
+        const label = addBtn.querySelector('.add-to-cart-label');
+        const originalIconClass = icon.className;
+        const originalLabel = label.textContent;
         const quantity = this.productQuantity.getQuantity();
 
         // Show loading state
         addBtn.disabled = true;
-        addBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...';
+        icon.className = 'fas fa-spinner fa-spin';
+        label.textContent = 'Adding...';
 
         try {
             await addToCart(this.userId, this.productId, quantity, {
                 onSuccess: (result) => {
-                    addBtn.innerHTML = '✅ Added';
+                    icon.className = '';
+                    label.textContent = '✅ Added';
                     this.handleCartSuccess(result);
                 },
                 onError: (error) => {
-                    addBtn.innerHTML = '❌ Error';
+                    icon.className = '';
+                    label.textContent = '❌ Error';
                     this.handleCartError(error);
                 }
             });
 
         } catch (error) {
             console.error('Error adding to cart:', error);
-            addBtn.innerHTML = '❌ Error';
+            icon.className = '';
+            label.textContent = '❌ Error';
             this.handleCartError(error);
         }
 
         // Reset button state after delay
         setTimeout(() => {
             addBtn.disabled = false;
-            addBtn.innerHTML = originalContent;
+            icon.className = originalIconClass;
+            label.textContent = originalLabel;
         }, 2000);
     }
 
@@ -139,8 +139,6 @@ document.addEventListener('DOMContentLoaded', () => {
                      new URLSearchParams(window.location.search).get('productId') ||
                      window.location.pathname.split('/').pop();
 
-    const productCategory = document.querySelector('[data-product-category]')?.dataset.productCategory;
-
     // Initialize the product app
-    window.productApp = new ProductApp(productId, productCategory);
+    window.productApp = new ProductApp(productId);
 });

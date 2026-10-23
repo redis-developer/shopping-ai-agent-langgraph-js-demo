@@ -19,11 +19,11 @@ export async function getContextRetrieverTools() {
     try {
         const mcpTools = await (await getContextRetrieverClient()).listTools();
 
-        console.log(`🔎 Context Retriever tools (${mcpTools.length}): ${mcpTools.map((mcpTool) => mcpTool.name).join(", ")}`);
+        console.log(`📕 Context Retriever tools (${mcpTools.length}): ${mcpTools.map((mcpTool) => mcpTool.name).join(", ")}`);
 
         return mcpTools.map((mcpTool) => tool(
             async (args) => {
-                console.log(`🔎 Context Retriever: ${mcpTool.name}`, args);
+                console.log(`📕 Context Retriever: ${mcpTool.name}`, args);
 
                 // The connection is fetched again for each call, since a session can end
                 const result = await (await getContextRetrieverClient()).callTool(mcpTool.name, args as Record<string, unknown>);
