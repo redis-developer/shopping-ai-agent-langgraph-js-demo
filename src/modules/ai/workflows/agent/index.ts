@@ -11,7 +11,7 @@ import { toolsCondition } from "@langchain/langgraph/prebuilt";
 
 import { queryCacheCheck, frontDeskAgent, personalShopperAgent, processWorkOutputWithCaching, generateSuggestedFollowUps, retrieveLongTermMemories, toolNode, allTools } from "./nodes.ts";
 
-import { getWorkingMemory, addConversationTurn } from "../../../chat/domain/agent-memory-service.ts";
+import { getWorkingMemory, addConversationTurn } from "#modules/chat/domain/agent-memory-service";
 import { UsageCallbackHandler } from "../../helpers/usage-callback-handler.ts";
 import { provider, guardrails } from "../../providers/index.ts";
 

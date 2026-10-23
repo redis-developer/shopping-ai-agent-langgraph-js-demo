@@ -1,6 +1,6 @@
 import { ContextRetrieverMCPClient } from "@redis-iris/context-retriever/mcp";
 
-import CONFIG from "../../../config.ts";
+import CONFIG from "#config";
 
 let client: ContextRetrieverMCPClient | null = null;
 let connecting: Promise<ContextRetrieverMCPClient> | null = null;

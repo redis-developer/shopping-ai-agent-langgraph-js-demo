@@ -2,8 +2,8 @@ import type { EntityDescription } from "@redis-iris/context-retriever/models";
 
 import { toFieldDescriptions } from "./entity-fields.ts";
 import type { EntityFields } from "./entity-fields.ts";
-import { USER_KEY_TEMPLATE } from "../../../cart/data/cart-repository.ts";
-import type { UserDocument } from "../../../cart/data/cart-repository.ts";
+import { USER_KEY_TEMPLATE } from "#modules/cart/data/cart-repository";
+import type { UserDocument } from "#modules/cart/data/cart-repository";
 
 // The cart is a list of items inside the document. Context Retriever cannot index the inside of a
 // list of objects, so the cart is one field that can be read, and not searched.

@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { addItemToCart, getCart, removeItemFromCart, clearCart } from '../domain/cart-service.ts';
-import { HttpStatusCode } from '../../../lib/errors.ts';
+import { HttpStatusCode } from '#lib/errors';
 
 const router = Router();
 

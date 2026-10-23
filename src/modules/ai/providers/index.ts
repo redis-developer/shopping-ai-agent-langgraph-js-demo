@@ -1,4 +1,4 @@
-import CONFIG from '../../../config.ts';
+import CONFIG from '#config';
 
 // Each AI provider is its own workspace package, and only the chosen one is loaded.
 // The paths are written out in full (not built from a variable) so that tools which compile or

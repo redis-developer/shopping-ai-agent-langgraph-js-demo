@@ -1,5 +1,5 @@
-import { runShoppingAgentWorkflow } from '../../ai/workflows/agent/index.ts';
-import type { Step } from '../../ai/workflows/agent/stream-events.ts';
+import { runShoppingAgentWorkflow } from '#modules/ai/workflows/agent/index';
+import type { Step } from '#modules/ai/workflows/agent/stream-events';
 import { getWorkingMemory, listSessionIds, searchShopperPreferences } from './agent-memory-service.ts';
 
 // How many of the shopper's latest sessions the context lists

@@ -4,11 +4,11 @@ import { ToolNode } from "@langchain/langgraph/prebuilt";
 import { shoppingTools, entityQueryTools } from "./tools/shopping-tools.ts";
 import { memoryTools } from "./tools/memory-tools.ts";
 import { getContextRetrieverTools } from "../../context-retriever/index.ts";
-import { checkSemanticCache, saveToSemanticCache } from "../../../chat/domain/knowledge-bank-service.ts";
+import { checkSemanticCache, saveToSemanticCache } from "#modules/chat/domain/knowledge-bank-service";
 import { determineToolBasedCacheTTL } from "../../helpers/caching.ts";
-import { searchShopperPreferences } from "../../../chat/domain/agent-memory-service.ts";
-import { getProductImage } from "../../../products/domain/product-service.ts";
-import type { Attachment } from "../../../chat/domain/attachments.ts";
+import { searchShopperPreferences } from "#modules/chat/domain/agent-memory-service";
+import { getProductImage } from "#modules/products/domain/product-service";
+import type { Attachment } from "#modules/chat/domain/attachments";
 import type { ShoppingAgentStateType } from "./state.ts";
 import { createChatModel, sanitizeForCache, guardrails } from "../../providers/index.ts";
 

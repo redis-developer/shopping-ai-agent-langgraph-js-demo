@@ -6,14 +6,14 @@ import logger from 'morgan';
 import hbs from 'hbs';
 
 import CONFIG from './config.ts';
-import { handleError } from './lib/errors.ts';
+import { handleError } from '#lib/errors';
 
-import indexRouter from './modules/index-routes.ts';
+import indexRouter from '#modules/index-routes';
 // Module-based routes
-import cartRouter from './modules/cart/api/cart-routes.ts';
-import chatRouter from './modules/chat/api/chat-routes.ts';
-import productApiRouter from './modules/products/api/product-routes.ts';
-import productPagesRouter from './modules/products/api/product-pages.ts';
+import cartRouter from '#modules/cart/api/cart-routes';
+import chatRouter from '#modules/chat/api/chat-routes';
+import productApiRouter from '#modules/products/api/product-routes';
+import productPagesRouter from '#modules/products/api/product-pages';
 
 import { fileURLToPath } from 'url';
 

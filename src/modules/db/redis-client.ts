@@ -1,5 +1,5 @@
 import { createClient } from 'redis';
-import CONFIG from '../../config.ts';
+import CONFIG from '#config';
 
 let client: ReturnType<typeof createClient> | null = null;
 let isConnectionLost = false;

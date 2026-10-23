@@ -11,6 +11,20 @@
     "node": ">=24.0.0",
     "npm": ">=10.0.0"
   },
+  "imports": {
+    "#config": {
+      "app-compiled": "./src/config.js",
+      "default": "./src/config.ts"
+    },
+    "#lib/*": {
+      "app-compiled": "./src/lib/*.js",
+      "default": "./src/lib/*.ts"
+    },
+    "#modules/*": {
+      "app-compiled": "./src/modules/*.js",
+      "default": "./src/modules/*.ts"
+    }
+  },
   "scripts": {
     "start": "node src/index.ts",
     "load-products": "node src/scripts/load-products.ts",

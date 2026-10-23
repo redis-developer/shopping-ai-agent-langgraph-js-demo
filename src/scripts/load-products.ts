@@ -1,4 +1,4 @@
-import { loadProductsFromCSV, checkRedisMemory } from '../modules/products/data/product-loader.ts';
+import { loadProductsFromCSV, checkRedisMemory } from '#modules/products/data/product-loader';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 

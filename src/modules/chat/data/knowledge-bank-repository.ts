@@ -1,7 +1,7 @@
 import { LangCache } from "@redis-ai/langcache";
 import { SearchStrategy } from '@redis-ai/langcache/models/searchstrategy.js';
 
-import CONFIG from '../../../config.ts';
+import CONFIG from '#config';
 import type { Attachment } from '../domain/attachments.ts';
 
 /** What is saved in the knowledge bank: a reply, and the products shown with it */

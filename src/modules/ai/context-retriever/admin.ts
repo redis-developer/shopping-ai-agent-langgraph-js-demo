@@ -2,7 +2,7 @@ import { createContextRetriever, SDKHooks } from "@redis-iris/context-retriever"
 import { ContextSurfaceStatus } from "@redis-iris/context-retriever/models";
 import type { DataModel } from "@redis-iris/context-retriever/models";
 
-import CONFIG from "../../../config.ts";
+import CONFIG from "#config";
 import { productEntity } from "./entities/product-entity.ts";
 import { cartEntity } from "./entities/cart-entity.ts";
 

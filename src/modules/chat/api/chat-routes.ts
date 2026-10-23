@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { processShoppingInquiry, getShopperContext } from '../domain/chat-service.ts';
 import { getWorkingMemory } from '../domain/agent-memory-service.ts';
-import { AppError, HttpStatusCode } from '../../../lib/errors.ts';
+import { AppError, HttpStatusCode } from '#lib/errors';
 
 const router = Router();
 

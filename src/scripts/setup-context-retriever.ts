@@ -1,4 +1,4 @@
-import { ContextRetrieverAdmin } from '../modules/ai/context-retriever/admin.ts';
+import { ContextRetrieverAdmin } from '#modules/ai/context-retriever/admin';
 
 async function main() {
     // With --new-key the surface is left as it is, and only a new agent key is made for it

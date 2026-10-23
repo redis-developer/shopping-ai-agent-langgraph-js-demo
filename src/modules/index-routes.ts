@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import CONFIG from '../config.ts';
+import CONFIG from '#config';
 
 const router = Router();
 

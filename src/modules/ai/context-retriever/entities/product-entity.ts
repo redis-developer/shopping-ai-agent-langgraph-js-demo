@@ -2,8 +2,8 @@ import type { EntityDescription } from "@redis-iris/context-retriever/models";
 
 import { toFieldDescriptions } from "./entity-fields.ts";
 import type { EntityFields } from "./entity-fields.ts";
-import { PRODUCT_KEY_TEMPLATE } from "../../../products/data/product-repository.ts";
-import type { Product } from "../../../products/data/product-repository.ts";
+import { PRODUCT_KEY_TEMPLATE } from "#modules/products/data/product-repository";
+import type { Product } from "#modules/products/data/product-repository";
 
 // semanticScore is worked out for each search and is not stored. isOnSale is loosely typed, and
 // the discount and prices already say whether a product is on sale.

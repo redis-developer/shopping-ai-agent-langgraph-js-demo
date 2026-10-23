@@ -1,4 +1,4 @@
-import { getRedisClient } from '../../db/redis-client.ts';
+import { getRedisClient } from '#modules/db/redis-client';
 
 /** Products are stored as JSON under a key made of this prefix and the product ID */
 export const PRODUCT_KEY_PREFIX = 'products:';

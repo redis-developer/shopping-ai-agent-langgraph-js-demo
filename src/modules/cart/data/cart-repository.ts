@@ -1,4 +1,4 @@
-import { getRedisClient } from '../../db/redis-client.ts';
+import { getRedisClient } from '#modules/db/redis-client';
 
 export type CartItem = {
     productId: string;

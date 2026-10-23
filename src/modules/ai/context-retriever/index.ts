@@ -1,6 +1,6 @@
 import { tool } from "@langchain/core/tools";
 
-import CONFIG from "../../../config.ts";
+import CONFIG from "#config";
 import { getContextRetrieverClient } from "./context-retriever-client.ts";
 import { toProductsResult } from "./entities/product-entity.ts";
 
