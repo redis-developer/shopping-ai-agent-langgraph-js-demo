@@ -1,5 +1,6 @@
 import { runShoppingAgentWorkflow } from '#modules/ai/workflows/agent/index';
 import type { Step } from '#modules/ai/workflows/agent/stream-events';
+import type { Attachment } from './attachments.ts';
 import { getWorkingMemory, listSessionIds, searchShopperPreferences } from './agent-memory-service.ts';
 
 // How many of the shopper's latest sessions the context lists
@@ -13,9 +14,10 @@ const MAX_LISTED_SESSIONS = 10;
  * @param lookupSimilarResponses - Whether to look up similar earlier responses in the semantic cache (saving to it always happens)
  * @param onToken - Called with each piece of the reply as the agent writes it
  * @param onStep - Called when a step of the workflow, or a tool call, starts and finishes
+ * @param onAttachments - Called with the attachments of the reply (structured data for the UI to render), as soon as they are ready
  */
-export async function processShoppingInquiry(userId: string, sessionId: string, message: string, lookupSimilarResponses: boolean, onToken: (text: string) => void, onStep: (step: Step) => void) {
-    return runShoppingAgentWorkflow(userId, sessionId, message, lookupSimilarResponses, onToken, onStep);
+export async function processShoppingInquiry(userId: string, sessionId: string, message: string, lookupSimilarResponses: boolean, onToken: (text: string) => void, onStep: (step: Step) => void, onAttachments: (attachments: Attachment[]) => void) {
+    return runShoppingAgentWorkflow(userId, sessionId, message, lookupSimilarResponses, onToken, onStep, onAttachments);
 }
 
 /**

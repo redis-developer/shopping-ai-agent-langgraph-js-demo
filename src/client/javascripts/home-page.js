@@ -11,7 +11,10 @@ import { CartButton } from '@components/cart/cart-button.js';
 
 import { SearchBar } from '@components/search/search-bar.js';
 import { ProductCard } from '@components/products/product-card.js';
+import { ProductDetail } from '@components/products/product-detail.js';
 import { ProductView } from '@components/products/product-view.js';
+import { ResultsView } from '@components/results/results-view.js';
+import { createProductSummaryCard } from '@components/products/product-summary-card.js';
 import { NotificationSystem } from '@components/notifications/notification-system.js';
 import { SessionManager } from '@components/session/session-manager.js';
 
@@ -38,24 +41,26 @@ export class ShoppingApp {
         );
 
         this.productView = new ProductView(
-            DOM_IDS.CANVAS_HOME,
-            DOM_IDS.PRODUCT_VIEW,
-            DOM_IDS.PRODUCT_FRAME,
-            DOM_IDS.CLOSE_PRODUCT_VIEW
+            DOM_IDS.CANVAS,
+            DOM_IDS.CLOSE_PRODUCT_VIEW,
+            new ProductDetail(
+                this.userId,
+                (result) => this.handleCartSuccess(result),
+                (error) => this.handleCartError(error)
+            )
         );
 
-        // The product page shown in the canvas tells us when it changed the cart
-        window.addEventListener('message', (event) => {
-            if (event.origin === window.location.origin && event.data?.type === 'cart-count') {
-                this.cartCount.update(event.data.totalItems);
-            }
-        });
-
-        this.chatWindow = new ChatWindow(
-            DOM_IDS.CHAT_MESSAGES,
-            (productId, buttonElement) => this.handleProductAction(productId, buttonElement),
-            (productId) => this.productView.open(productId)
+        this.resultsView = new ResultsView(
+            {
+                productSummary: createProductSummaryCard(
+                    (productId, buttonElement) => this.handleProductAction(productId, buttonElement),
+                    (product) => this.productView.open(product)
+                )
+            },
+            (messageElement) => this.chatWindow.scrollToMessage(messageElement)
         );
+
+        this.chatWindow = new ChatWindow(DOM_IDS.CHAT_MESSAGES);
 
         this.contextPanel = new ContextPanel(
             () => ({ userId: this.userId, sessionId: this.sessionId }),
@@ -94,6 +99,9 @@ export class ShoppingApp {
 
         const lookupSimilarResponses = document.getElementById(DOM_IDS.LOOKUP_SIMILAR_RESPONSES_TOGGLE)?.checked ?? true;
 
+        // The cards come before the reply is finished, so they are not added again when it is
+        let cardsShown = false;
+
         await sendChatMessage(this.userId, this.sessionId, message, {
             lookupSimilarResponses,
             onStep: (step) => {
@@ -102,9 +110,17 @@ export class ShoppingApp {
             onToken: (text) => {
                 this.chatWindow.appendToReply(text);
             },
+            onAttachments: (attachments) => {
+                cardsShown = this.resultsView.add(message, attachments);
+            },
             onSuccess: (chatMessage) => {
                 this.chatWindow.hideTypingIndicator();
-                this.chatWindow.addMessage(chatMessage.content, 'assistant', chatMessage);
+                const messageElement = this.chatWindow.addMessage(chatMessage.content, 'assistant', chatMessage);
+                if (cardsShown) {
+                    this.resultsView.linkMessage(messageElement);
+                } else {
+                    this.resultsView.add(message, chatMessage.attachments, messageElement);
+                }
                 this.chatWindow.showSuggestedFollowUps(chatMessage.suggestedFollowUps);
 
                 if (chatMessage.attachments?.length && !this.cartCountLoaded) {
@@ -144,8 +160,18 @@ export class ShoppingApp {
                 this.sessionId = sessionId;
 
                 this.chatWindow.clear();
+                this.resultsView.clear();
+
+                // The cards of an earlier answer are shown in the canvas, as they were when the answer came
+                let question = '';
                 messages.forEach((message) => {
-                    this.chatWindow.addMessage(message.content, message.role === 'user' ? 'user' : 'assistant', message);
+                    if (message.role === 'user') {
+                        question = message.content;
+                        this.chatWindow.addMessage(message.content, 'user', message);
+                    } else {
+                        const messageElement = this.chatWindow.addMessage(message.content, 'assistant', message);
+                        this.resultsView.add(question, message.attachments, messageElement);
+                    }
                 });
             } catch (error) {
                 console.error('Error loading the session:', error);
@@ -159,6 +185,7 @@ export class ShoppingApp {
 
     handleNewChat() {
         this.chatWindow.showNewChatMessage();
+        this.resultsView.clear();
     }
 
     handleMainSearch(query) {

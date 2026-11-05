@@ -14,7 +14,7 @@ router.post('/', async function(req, res, next) {
     }
 
     // The reply is sent as a stream of events: what the assistant is doing, its text as the
-    // agent writes it, then one last event with everything else. The stream starts with the first event, so an
+    // agent writes it, its attachments as soon as they are ready, then one last event with everything else. The stream starts with the first event, so an
     // error before that still gets the usual JSON error response.
     let streaming = false;
     const send = (event: string, data: object) => {
@@ -26,7 +26,7 @@ router.post('/', async function(req, res, next) {
     };
 
     try {
-        const reply = await processShoppingInquiry(userId, sessionId, message, lookupSimilarResponses, (text) => send('token', { text }), (step) => send('step', step));
+        const reply = await processShoppingInquiry(userId, sessionId, message, lookupSimilarResponses, (text) => send('token', { text }), (step) => send('step', step), (attachments) => send('attachments', { attachments }));
         send('done', {
             content: reply.content,
             attachments: reply.attachments,

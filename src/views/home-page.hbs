@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>{{appName}} - Instant groceries, smarter shopping</title>
     <link rel="stylesheet" href="/themes/neo-brutalist/theme.css" media="screen,print" >
+    <link rel="stylesheet" href="/themes/neo-brutalist/product.css" media="screen,print" >
     <link rel="stylesheet" href="/themes/neo-brutalist/canvas.css" media="screen,print" >
     <link rel="stylesheet" href="/themes/neo-brutalist/chat.css" media="screen,print" >
     <link rel="icon" href="images/redis-avatar.png" type="image/png">
@@ -39,37 +40,10 @@
 <body class="neo-brutalist-theme chat-page">
     <div class="app-layout">
     <div class="main-column">
-    <!-- Main Shopping Website -->
-    <header class="header">
-        <div class="header-container">
-            <div class="logo-section">
-                <h1 class="site-logo">
-                    <i class="fas fa-shopping-basket"></i>
-                    {{appName}}
-                </h1>
-            </div>
-            
-            <form class="search-bar" role="search">
-                <input type="text" placeholder="Search for groceries..." class="main-search" aria-label="Search for groceries">
-                <button type="submit" class="search-btn" aria-label="Search"><i class="fas fa-search"></i></button>
-            </form>
-            
-            <div class="header-actions">
-                <p class="user-info">
-                    <i class="fas fa-user-circle"></i>
-                    <span id="username-display">Hello, user</span>
-                </p>
-                <p class="cart-info">
-                    <i class="fas fa-shopping-cart"></i>
-                    <span class="cart-count">0</span>
-                </p>
-                {{> github_link}}
-            </div>
-        </div>
-    </header>
+    {{> site_header}}
 
-    <main class="canvas">
-    <div id="canvas-home">
+    <main class="canvas" id="canvas" data-view="home">
+    <div data-canvas-view="home">
     <!-- Hero Section -->
     <section class="hero-section">
         <div class="hero-content">
@@ -89,6 +63,10 @@
                     <span>Shop by craving</span>
                 </li>
             </ul>
+            <form class="search-bar" role="search">
+                <input type="text" placeholder="Find a product..." class="main-search" aria-label="Search for groceries">
+                <button type="submit" class="search-btn" aria-label="Search"><i class="fas fa-search"></i> <span class="search-btn-label">Search</span></button>
+            </form>
         </div>
     </section>
 
@@ -167,12 +145,41 @@
     </section>
     </div>
 
-    <!-- Product details (the product page, shown in place of the sections above) -->
-    <section id="product-view" class="product-view" aria-label="Product details" hidden>
+    <!-- The products of the assistant's answers, shown in place of the sections above -->
+    <section class="results-view" data-canvas-view="results" aria-label="Results">
+        <header class="results-header">
+            <nav id="results-pager" class="results-pager" aria-label="Results of earlier answers" hidden>
+                <button type="button" id="results-previous" class="results-pager-button" aria-label="Previous results"><i class="fas fa-chevron-left"></i></button>
+                <p id="results-position" class="results-position" aria-live="polite"></p>
+                <button type="button" id="results-next" class="results-pager-button" aria-label="Next results"><i class="fas fa-chevron-right"></i></button>
+            </nav>
+            <h2 id="results-title" class="results-title"></h2>
+            <button type="button" id="close-results-view" class="results-close" aria-label="Close results"><i class="fas fa-times"></i></button>
+        </header>
+        <ul id="results-list" class="products-grid"></ul>
+
+        <!-- Product card shown in the results -->
+        <template id="product-card-template">
+            <li class="product-card">
+                <figure class="product-image"></figure>
+                <div class="product-info">
+                    <h4><a class="product-name"></a></h4>
+                    <p class="product-price"><data class="price"></data></p>
+                    <p class="product-card-rating"></p>
+                    <button type="button" class="add-btn" title="Add to cart">🛒 Add</button>
+                </div>
+            </li>
+        </template>
+    </section>
+
+    <!-- A product's details, shown in place of the sections above. Same markup as the page at /products/:id. -->
+    <section class="product-view" data-canvas-view="product" aria-label="Product details">
         <button type="button" id="close-product-view" class="product-view-back">
-            <i class="fas fa-arrow-left"></i> Back to shopping
+            <i class="fas fa-arrow-left"></i> Back
         </button>
-        <iframe id="product-frame" class="product-frame" title="Product details"></iframe>
+        <div class="product-container">
+            {{> product_detail}}
+        </div>
     </section>
     </main>
     {{> site_footer}}
@@ -223,23 +230,6 @@
                         </ul>
                     </li>
                 </ol>
-
-                <!-- Product card shown in assistant messages -->
-                <template id="product-card-template">
-                    <li class="chat-product-card">
-                        <header class="chat-product-top">
-                            <span class="chat-product-image"></span>
-                            <a class="chat-product-name"></a>
-                        </header>
-                        <footer class="chat-product-bottom">
-                            <span class="chat-product-meta">
-                                <data class="price"></data>
-                                <span class="chat-product-rating"></span>
-                            </span>
-                            <button type="button" class="add-btn chat-product-add" title="Add to cart">🛒 Add</button>
-                        </footer>
-                    </li>
-                </template>
 
                 <!-- Messages in the chat -->
                 <template id="user-message-template">

@@ -25,100 +25,11 @@
     </script>
 </head>
 <body class="neo-brutalist-theme">
-    <!-- Header -->
-    <header class="header">
-        <div class="header-container">
-            <div class="logo-section">
-                <h1 class="site-logo">
-                    <i class="fas fa-shopping-basket"></i>
-                    <a href="/app">{{appName}}</a>
-                </h1>
-            </div>
-            
-            <div class="header-actions">
-                <button onclick="history.back()" class="back-btn">
-                    <i class="fas fa-arrow-left"></i> Back
-                </button>
-                <p class="cart-info">
-                    <i class="fas fa-shopping-cart"></i>
-                    <span class="cart-count">0</span>
-                </p>
-                {{> github_link}}
-            </div>
-        </div>
-    </header>
+    {{> site_header}}
 
     <!-- Product Details -->
     <main class="product-container">
-        <article class="product-detail">
-            <figure class="product-image-section">
-                <div class="product-main-image">
-                    <!-- Emoji standing in for a product image -->
-                    <span class="product-emoji">{{productImage}}</span>
-                </div>
-            </figure>
-
-            <div class="product-info-section" data-product-id="{{product.id}}">
-                <header class="product-header">
-                    <h2 class="product-title">{{product.name}}</h2>
-                    {{#if product.brand}}
-                        <p class="product-brand">By {{product.brand}}</p>
-                    {{/if}}
-                    
-                    <div class="product-badges">
-                        <span class="category-badge">{{product.category}}</span>
-                        {{#if product.subCategory}}
-                            <span class="subcategory-badge">{{product.subCategory}}</span>
-                        {{/if}}
-                        {{#if product.type}}
-                            <span class="type-badge">{{product.type}}</span>
-                        {{/if}}
-                    </div>
-                </header>
-
-            <section class="product-rating" aria-label="Product Rating">
-                    {{#if product.rating}}
-                        <div class="rating-stars">
-                            {{#repeat product.rating}}⭐{{/repeat}}
-                            <span class="rating-text">{{product.rating}}/5</span>
-                        </div>
-                    {{/if}}
-            </section>
-
-            <section class="product-pricing" aria-label="Pricing Information">
-                    <div class="price-section">
-                        <data class="current-price" value="{{product.salePrice}}">₹{{product.salePrice}}</data>
-                        
-                    </div>
-                    {{#if product.isOnSale}}
-                        <div class="sale-banner">🔥 On sale!</div>
-                    {{/if}}
-            </section>
-
-                {{#if product.description}}
-                    <section class="product-description" aria-labelledby="description-heading">
-                        <h3 id="description-heading">Description</h3>
-                        <p>{{product.description}}</p>
-                    </section>
-                {{/if}}
-
-                <form class="product-actions" aria-label="Add to Cart">
-                    <fieldset class="quantity-section">
-                        <legend>Quantity:</legend>
-                        <div class="quantity-controls">
-                            <button type="button" class="quantity-btn" data-quantity-change="-1">-</button>
-                            <input type="number" id="quantity" value="1" min="1" max="10" aria-label="Quantity">
-                            <button type="button" class="quantity-btn" data-quantity-change="1">+</button>
-                        </div>
-                    </fieldset>
-                    
-                    <button type="submit" class="add-to-cart-btn">
-                        <i class="fas fa-shopping-cart"></i>
-                        <span class="add-to-cart-label">Add to cart</span>
-                    </button>
-                </form>
-            </div>
-        </article>
+        {{> product_detail}}
     </main>
 
     {{> site_footer}}

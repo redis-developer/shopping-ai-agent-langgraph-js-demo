@@ -8,7 +8,7 @@ export let CHATS = {}; // In-memory store of sessionId → messages
  * @property {number|string} [responseTime] - Response time (optional).
  * @property {Object} [usage] - Token usage for this response (input, output, total and detail counts).
  * @property {string[]} [suggestedFollowUps] - Short messages the shopper could send next, shown as buttons under the response.
- * @property {Array<{type: 'productSummary', data: {id: string, name: string, price: number, image: string, rating: number}}>} [attachments] - Content shown with this response, such as product cards.
+ * @property {Array<{type: 'productSummary', data: {id: string, name: string, price: number, image: string, rating: number}}>} [attachments] - Content that comes with this response for the UI to render, mostly structured data.
  */
 
 export const chatData = {
@@ -72,13 +72,14 @@ export function fetchSessionMessages(sessionId) {
 
 /**
  * Reads the server's stream of events and returns the last one, which carries the full reply.
- * What the assistant is doing and the reply's text arrive first, piece by piece.
+ * What the assistant is doing, the reply's text and its attachments arrive first, as they are ready.
  * @param {Response} res
  * @param {(text: string) => void} [onToken]
  * @param {(step: {label: string, status: 'started'|'finished', durationMs?: number}) => void} [onStep]
+ * @param {(attachments: Array) => void} [onAttachments] - called with the attachments, which arrive before the reply is complete
  * @returns {Promise<{content: string, attachments?: Array, suggestedFollowUps?: string[], usage?: Object, isCachedResponse: boolean}>}
  */
-async function readReply(res, onToken, onStep) {
+async function readReply(res, onToken, onStep, onAttachments) {
     const reader = res.body.pipeThrough(new TextDecoderStream()).getReader();
     let unread = '';
     let reply = null;
@@ -101,6 +102,8 @@ async function readReply(res, onToken, onStep) {
                 onToken?.(data.text);
             } else if (type === 'step') {
                 onStep?.(data);
+            } else if (type === 'attachments') {
+                onAttachments?.(data.attachments);
             } else if (type === 'done') {
                 reply = data;
             } else if (type === 'error') {
@@ -123,12 +126,13 @@ async function readReply(res, onToken, onStep) {
  * @param {() => void} [options.onLoad]                 - called before fetch
  * @param {(text: string) => void} [options.onToken]    - called with each piece of the reply as it is written
  * @param {(step: {label: string, status: 'started'|'finished', durationMs?: number}) => void} [options.onStep] - called when a step starts and finishes
+ * @param {(attachments: Array) => void} [options.onAttachments] - called with the attachments as soon as they are ready, before the reply is complete
  * @param {(reply: string) => void} [options.onSuccess] - called with assistant reply
  * @param {(error: any) => void} [options.onError]      - called on fetch or server error
  * @param {boolean} [options.lookupSimilarResponses]      - whether to look up similar responses in the semantic cache (default: true)
  */
 export async function sendChatMessage(userId, sessionId, message, options = {}) {
-    const { onLoad, onToken, onStep, onSuccess, onError, lookupSimilarResponses = true } = options;
+    const { onLoad, onToken, onStep, onAttachments, onSuccess, onError, lookupSimilarResponses = true } = options;
 
     try {
         onLoad?.();
@@ -149,7 +153,7 @@ export async function sendChatMessage(userId, sessionId, message, options = {}) 
             throw new Error(error.error || 'Unknown error');
         }
 
-        const data = await readReply(res, onToken, onStep);
+        const data = await readReply(res, onToken, onStep, onAttachments);
 
         const endTime = performance.now();
         const responseTime = (endTime - startTime) / 1000; // in seconds

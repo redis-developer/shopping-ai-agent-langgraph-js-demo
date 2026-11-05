@@ -1,141 +1,32 @@
 /* Neo-Brutalist Product Page Styles */
 
-/* The theme's variables apply here too. The product page has a larger shadow. */
-:root {
-    --shadow: 4px 4px 0px 0px #163342;
-}
-
-/* Semantic HTML5 Element Resets */
-main, article, section, header, figure, aside, fieldset, legend {
+/* Browsers give these elements their own spacing and borders. :where() keeps the rules as weak as plain element rules, so the classes below win. */
+:where(.product-container) :is(figure, fieldset, legend) {
     margin: 0;
     padding: 0;
     border: none;
 }
 
-fieldset {
-    border: none;
-    padding: 0;
-    margin: 0;
+:where(.product-container) fieldset {
     min-width: 0;
 }
 
-legend {
-    padding: 0;
-    margin: 0;
+:where(.product-container) legend {
     display: block;
 }
 
-/* Font Imports and Base Styles */
-.neo-brutalist-theme {
-    font-family: var(--font-page);
-    font-weight: 400;
-    line-height: 1.4;
-    background-color: var(--light);
-    color: var(--dark);
-}
-
-/* Header Styles */
-.header {
-    background: var(--white);
-    border-bottom: var(--border);
-    box-shadow: var(--shadow);
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    margin-bottom: 2rem;
-}
-
-/* Shown inside the home page: its own header is used instead */
-.embedded .header,
-.embedded .site-footer {
+/* Parts that a product may not have are hidden, even where a rule below sets their display */
+.product-detail [hidden] {
     display: none;
 }
 
-.header-container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 1rem 2rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.site-logo {
-    font-family: var(--font-display);
-    font-size: 2rem;
-    font-weight: 400;
-    margin: 0;
-    color: var(--dark);
-    text-transform: uppercase;
-    letter-spacing: 2px;
-
-    & a {
-        color: var(--dark);
-        text-decoration: none;
-    }
-
-    & i {
-        color: var(--primary);
-        margin-right: 0.5rem;
-    }
-}
-
-.header-actions {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-}
-
-.back-btn {
-    background: var(--white);
-    border: var(--border);
-    color: var(--dark);
-    padding: 0.75rem 1.5rem;
-    font-family: var(--font-sans);
-    font-weight: 700;
-    font-size: 0.9rem;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    cursor: pointer;
-    box-shadow: var(--shadow);
-    transition: var(--transition);
-
-    &:hover {
-        box-shadow: var(--shadow-hover);
-        transform: translate(-2px, -2px);
-    }
-
-    &:active {
-        box-shadow: var(--shadow-active);
-        transform: translate(2px, 2px);
-    }
-}
-
-.cart-info {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    background: var(--primary);
-    color: var(--white);
-    padding: 0.75rem 1rem;
-    border: var(--border);
-    box-shadow: var(--shadow);
-    font-weight: 700;
-}
-
-.cart-count {
-    background: var(--dark);
-    color: var(--white);
-    padding: 0.25rem 0.5rem;
-    font-size: 0.8rem;
-    font-weight: 900;
-}
-
-/* Product Container */
+/* Product Container. The product has a larger shadow than the rest of the page, and its layout follows the width of this container (the canvas is narrower than the window). */
 .product-container {
+    --shadow: 4px 4px 0px 0px #163342;
+    container-type: inline-size;
     max-width: 1200px;
     margin: 0 auto;
-    padding: 0 2rem;
+    padding: 2rem 2rem 0;
 }
 
 .product-detail {
@@ -492,71 +383,52 @@ legend {
 
 /* Responsive Design */
 @media (max-width: 768px) {
-    .header-container {
-        padding: 1rem;
-    }
-    
-    .site-logo {
-        font-size: 1.5rem;
-    }
-    
     .product-container {
-        padding: 0 1rem;
+        padding: 2rem 1rem 0;
     }
-    
+}
+
+@container (max-width: 768px) {
     .product-detail {
         grid-template-columns: 1fr;
         gap: 2rem;
     }
-    
+
     .product-image-section {
         position: static;
     }
-    
+
     .product-main-image {
         padding: 2rem;
         min-height: 200px;
     }
-    
+
     .product-emoji {
         font-size: 6rem;
     }
-    
+
     .product-title {
         font-size: 2rem;
     }
-    
+
     .current-price {
         font-size: 2rem;
-    }
-    
-    .header-actions {
-        gap: 0.5rem;
-    }
-    
-    .back-btn {
-        padding: 0.5rem 1rem;
-        font-size: 0.8rem;
-    }
-    
-    .cart-info {
-        padding: 0.5rem 0.75rem;
     }
 }
 
-@media (max-width: 480px) {
+@container (max-width: 480px) {
     .product-title {
         font-size: 1.5rem;
     }
-    
+
     .current-price {
         font-size: 1.8rem;
     }
-    
+
     .product-emoji {
         font-size: 4rem;
     }
-    
+
     .product-pricing,
     .product-actions,
     .product-description,

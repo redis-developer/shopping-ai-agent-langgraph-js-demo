@@ -27,12 +27,22 @@ body.chat-page {
     flex: 1;
     overflow-y: auto;
     min-height: 0;
+
+    /* One view at a time: the page sections, the results of the assistant's answers, or a product page. The script sets data-view. */
+    & > [data-canvas-view] {
+        display: none;
+    }
+
+    &[data-view="home"] > [data-canvas-view="home"],
+    &[data-view="results"] > [data-canvas-view="results"],
+    &[data-view="product"] > [data-canvas-view="product"] {
+        display: block;
+    }
 }
 
 /* Hero Section */
 .hero-section {
     background: var(--white);
-    border-bottom: var(--border);
     padding: 3rem 2rem;
     text-align: center;
     margin-bottom: 2rem;
@@ -82,6 +92,66 @@ body.chat-page {
     letter-spacing: 1px;
     /* box-shadow: var(--shadow); */
     transition: var(--transition);
+}
+
+/* Search, below the hero's features. The field and the button are one box. It sends the query to the chat. */
+.search-bar {
+    display: flex;
+    max-width: 640px;
+    margin: 3rem auto 0;
+    background: var(--white);
+    border: var(--border);
+    box-shadow: var(--shadow-hover-medium);
+    transition: var(--transition);
+
+    &:focus-within {
+        box-shadow: var(--shadow-hover);
+        transform: translate(-2px, -2px);
+    }
+}
+
+.main-search {
+    flex: 1;
+    min-width: 0;
+    padding: 1.1rem 1.5rem;
+    background: transparent;
+    border: none;
+    outline: none;
+    font-family: var(--font-sans);
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--dark);
+
+    &::placeholder {
+        text-transform: uppercase;
+    }
+}
+
+.search-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0 1.75rem;
+    background: var(--primary);
+    border: none;
+    border-left: var(--border);
+    color: var(--white);
+    cursor: pointer;
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: var(--transition);
+
+    &:hover {
+        background: var(--secondary);
+    }
+
+    &:focus-visible {
+        outline: 3px solid var(--dark);
+        outline-offset: -8px;
+    }
 }
 
 /* Categories Section */
@@ -154,21 +224,82 @@ body.chat-page {
     }
 }
 
-/* Product details page, shown in the canvas in place of the page sections */
-.product-view {
-    height: 100%;
+/* The products of the assistant's answers, shown in the canvas in place of the page sections */
+.results-view {
+    padding: 1.5rem 2rem 2rem;
+}
+
+.results-header {
     display: flex;
-    flex-direction: column;
+    flex-wrap: wrap;
+    align-items: center;
     gap: 1rem;
-    padding: 1rem 2rem;
+    margin-bottom: 1.5rem;
+}
+
+.results-pager {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
 
     &[hidden] {
         display: none;
     }
 }
 
-.product-view-back {
-    align-self: flex-start;
+.results-position {
+    min-width: 3.5rem;
+    text-align: center;
+    font-family: var(--font-sans);
+    font-weight: 700;
+    color: var(--dark);
+}
+
+.results-title {
+    flex: 1;
+    min-width: 0;
+    font-family: var(--font-display);
+    font-size: 2rem;
+    font-weight: 400;
+    letter-spacing: 1px;
+    color: var(--dark);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.results-view .product-card {
+    cursor: pointer;
+}
+
+.product-name {
+    color: inherit;
+    text-decoration: none;
+}
+
+.product-card-rating {
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+    color: var(--text);
+}
+
+/* A product's details, shown in the canvas in place of the page sections. The product is styled by product.css, as on its own page. */
+.product-view {
+    padding: 1.5rem 2rem 2rem;
+
+    & .product-container {
+        padding: 1.5rem 0 0;
+    }
+
+    /* The page's header is sticky, so the image waits below it. The canvas has none. */
+    & .product-image-section {
+        top: 1rem;
+    }
+}
+
+.product-view-back,
+.results-pager-button,
+.results-close {
     background: var(--white);
     border: var(--border);
     color: var(--dark);
@@ -182,17 +313,16 @@ body.chat-page {
     box-shadow: var(--shadow);
     transition: var(--transition);
 
-    &:hover {
+    &:hover:not(:disabled) {
         box-shadow: var(--shadow-hover);
         transform: translate(-2px, -2px);
     }
-}
 
-.product-frame {
-    flex: 1;
-    width: 100%;
-    border: var(--border);
-    background: var(--white);
+    &:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+        box-shadow: none;
+    }
 }
 
 /* Responsive */
@@ -218,12 +348,23 @@ body.chat-page {
         overflow: visible;
     }
 
-    .product-frame {
-        min-height: 80vh;
-    }
 }
 
 @media (max-width: 480px) {
+    /* The button keeps only its icon, so the field has room for its text */
+    .main-search {
+        padding: 1rem;
+        font-size: 1rem;
+    }
+
+    .search-btn {
+        padding: 0 1.25rem;
+    }
+
+    .search-btn-label {
+        display: none;
+    }
+
     .categories-grid {
         grid-template-columns: 1fr;
     }

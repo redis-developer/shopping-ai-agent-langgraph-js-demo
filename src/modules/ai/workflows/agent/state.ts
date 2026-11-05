@@ -1,5 +1,19 @@
-import { MessagesValue, StateSchema } from "@langchain/langgraph";
+import { MessagesValue, ReducedValue, StateSchema } from "@langchain/langgraph";
 import { z } from "zod";
+
+// Content shown with the reply. The type says what is in data.
+const attachmentSchema = z.discriminatedUnion("type", [
+    z.object({
+        type: z.literal("productSummary"),
+        data: z.object({
+            id: z.string(),
+            name: z.string(),
+            price: z.number(),
+            image: z.string(),
+            rating: z.number(),
+        }),
+    }),
+]);
 
 /**
  * Grocery Shopping Agent State Schema
@@ -27,19 +41,14 @@ export const ShoppingAgentState = new StateSchema({
     guardrailTestResult: z.enum(["passed", "blocked"]).optional(),
     /** Short messages the shopper could send next, shown as buttons under the reply */
     suggestedFollowUps: z.array(z.string()).optional(),
-    /** Content shown with the reply, such as the product cards for the products the tools found this turn (or the cached reply came with) */
-    attachments: z.array(z.discriminatedUnion("type", [
-        z.object({
-            type: z.literal("productSummary"),
-            data: z.object({
-                id: z.string(),
-                name: z.string(),
-                price: z.number(),
-                image: z.string(),
-                rating: z.number(),
-            }),
-        }),
-    ])).optional(),
+    /**
+     * Content that comes with the reply for the UI to render, mostly structured data. Here it is the products the tools found this turn (or the ones the cached reply came with).
+     * A node adds to it and does not return what it has read, so every node can contribute its own and none replaces another's.
+     */
+    attachments: new ReducedValue(
+        z.array(attachmentSchema).default(() => []),
+        { reducer: (existing, update) => existing.concat(update ?? []) }
+    ),
 });
 
 export type ShoppingAgentStateType = typeof ShoppingAgentState.State;

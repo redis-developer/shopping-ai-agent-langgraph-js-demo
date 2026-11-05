@@ -11,7 +11,8 @@ Redish is an AI-powered grocery shopping platform that combines Redis's speed wi
 - **Vibe Shopping**: Describe a mood or occasion in everyday words, like "cozy movie night snacks" or "a light summer lunch", and get products that fit, using semantic search
 - **Product Search**: Find products by name, category, or description.
 - **Recipe Ingredients**: Ask for ingredients for any recipe and get suggested products.
-- **Product Cards**: Products the assistant finds show up as cards in the chat, each with an Add to cart button and a product details view.
+- **Product Cards**: Products the assistant finds show up as cards in the main pane next to the chat, each with an Add to cart button and a product details view.
+- **Results View**: Each answer that comes with attachments is one set of results in the main pane. The arrows step through the sets and scroll the chat to the answer each set belongs to.
 - **Smart Recommendations**: AI suggests alternatives and complementary items.
 - **Cart Management**: Add, remove, and view cart items through natural conversation.
 
@@ -277,7 +278,7 @@ src/
 
 | Method | Endpoint | Description |
 |---|---|---|
-| `POST` | `/api/ai/chat` | Main chat interface for AI shopping assistant. The reply is streamed as server-sent events: `step` (what the assistant is doing), `token` (the reply text as it is written), then `done` (the full reply, product cards, suggested follow-ups and token usage) |
+| `POST` | `/api/ai/chat` | Main chat interface for AI shopping assistant. The reply is streamed as server-sent events: `step` (what the assistant is doing), `token` (the reply text as it is written), `attachments` (structured data for the UI to render, such as the products found, as soon as it is ready), then `done` (the full reply, attachments, suggested follow-ups and token usage) |
 | `GET` | `/api/ai/chat/context` | A shopper's saved preferences, session summary and earlier sessions (`userId` and `sessionId` query parameters) |
 | `GET` | `/api/ai/chat/sessions/:sessionId` | The messages of a session, to continue it in the chat |
 

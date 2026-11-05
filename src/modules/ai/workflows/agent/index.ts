@@ -12,6 +12,7 @@ import { toolsCondition } from "@langchain/langgraph/prebuilt";
 import { queryCacheCheck, frontDeskAgent, personalShopperAgent, processWorkOutputWithCaching, generateSuggestedFollowUps, retrieveLongTermMemories, toolNode, allTools } from "./nodes.ts";
 
 import { getWorkingMemory, addConversationTurn } from "#modules/chat/domain/agent-memory-service";
+import type { Attachment } from "#modules/chat/domain/attachments";
 import { UsageCallbackHandler } from "../../helpers/usage-callback-handler.ts";
 import { provider, guardrails } from "../../providers/index.ts";
 
@@ -55,7 +56,7 @@ export const createAgenticAIShoppingWorkflow = () => {
         .addConditionalEdges("retrieve_long_term_memories", (state) => {
             return state.cacheStatus === "hit" ? "generate_suggested_follow_ups" : "personal_shopper_agent";
         }, ["generate_suggested_follow_ups", "personal_shopper_agent"])
-        // When the shopper agent is done, caching the reply and writing the follow-ups run side by side
+        // When the shopper agent is done, caching the reply (with any attachments) and writing the follow-ups run side by side
         .addConditionalEdges("personal_shopper_agent", (state) => {
             return toolsCondition(state) === "tools" ? "tools" : ["process_work_output_with_caching", "generate_suggested_follow_ups"];
         }, ["tools", "process_work_output_with_caching", "generate_suggested_follow_ups"])
@@ -75,7 +76,7 @@ export const shoppingWorkflowGraph = createAgenticAIShoppingWorkflow();
 
 export function getWorkflowExecutionSummary(graphResult: ShoppingAgentStateType) {
     const toolNames = graphResult.messages
-        .filter((message) => message.getType() === "tool")
+        .filter((message) => message.type === "tool")
         .map((toolMessage) => toolMessage.name);
 
     const summary = {
@@ -124,6 +125,7 @@ export function getWorkflowExecutionSummary(graphResult: ShoppingAgentStateType)
  * Uses Redis Agent Memory for conversation history
  * @param onToken - Called with each piece of the agent's reply as it is written
  * @param onStep - Called when a step of the workflow, or a tool call, starts and finishes
+ * @param onAttachments - Called with the attachments of the reply (structured data for the UI to render), as soon as they are ready
  */
 export async function runShoppingAgentWorkflow(
     userId: string,
@@ -131,7 +133,8 @@ export async function runShoppingAgentWorkflow(
     message: string,
     lookupSimilarResponses: boolean,
     onToken: (text: string) => void,
-    onStep: (step: Step) => void
+    onStep: (step: Step) => void,
+    onAttachments: (attachments: Attachment[]) => void
 ) {
     console.log(`\n${'='.repeat(60)}`);
     console.log(`🚀 Shopping Agent Workflow - Session: ${sessionId}`);
@@ -173,7 +176,7 @@ export async function runShoppingAgentWorkflow(
         configurable: { userId, sessionId }
     });
 
-    await readRun(run, onToken, onStep, allTools);
+    await readRun(run, onToken, onStep, onAttachments, allTools);
     const result = await run.output;
 
     // Get execution summary for logging

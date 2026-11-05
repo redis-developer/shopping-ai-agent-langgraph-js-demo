@@ -1,0 +1,57 @@
+<article class="product-detail">
+    <figure class="product-image-section">
+        <div class="product-main-image">
+            <!-- Emoji standing in for a product image -->
+            <span class="product-emoji">{{productImage}}</span>
+        </div>
+    </figure>
+
+    <div class="product-info-section" data-product-id="{{product.id}}">
+        <!-- Every element is written, and the ones for what a product may not have are hidden. The canvas shows other products in the same markup, so it fills these in. -->
+        <header class="product-header">
+            <h2 class="product-title">{{product.name}}</h2>
+            <p class="product-brand" {{#unless product.brand}}hidden{{/unless}}>By {{product.brand}}</p>
+
+            <div class="product-badges">
+                <span class="category-badge">{{product.category}}</span>
+                <span class="subcategory-badge" {{#unless product.subCategory}}hidden{{/unless}}>{{product.subCategory}}</span>
+                <span class="type-badge" {{#unless product.type}}hidden{{/unless}}>{{product.type}}</span>
+            </div>
+        </header>
+
+        <section class="product-rating" aria-label="Product Rating" {{#unless product.rating}}hidden{{/unless}}>
+            <div class="rating-stars">
+                <span class="rating-stars-icons">{{#repeat product.rating}}⭐{{/repeat}}</span>
+                <span class="rating-text">{{product.rating}}/5</span>
+            </div>
+        </section>
+
+        <section class="product-pricing" aria-label="Pricing Information">
+            <div class="price-section">
+                <data class="current-price" value="{{product.salePrice}}">₹{{product.salePrice}}</data>
+            </div>
+            <div class="sale-banner" {{#unless product.isOnSale}}hidden{{/unless}}>🔥 On sale!</div>
+        </section>
+
+        <section class="product-description" aria-labelledby="description-heading" {{#unless product.description}}hidden{{/unless}}>
+            <h3 id="description-heading">Description</h3>
+            <p>{{product.description}}</p>
+        </section>
+
+        <form class="product-actions" aria-label="Add to Cart">
+            <fieldset class="quantity-section">
+                <legend>Quantity:</legend>
+                <div class="quantity-controls">
+                    <button type="button" class="quantity-btn" data-quantity-change="-1">-</button>
+                    <input type="number" id="quantity" value="1" min="1" max="10" aria-label="Quantity">
+                    <button type="button" class="quantity-btn" data-quantity-change="1">+</button>
+                </div>
+            </fieldset>
+
+            <button type="submit" class="add-to-cart-btn">
+                <i class="fas fa-shopping-cart"></i>
+                <span class="add-to-cart-label">Add to cart</span>
+            </button>
+        </form>
+    </div>
+</article>

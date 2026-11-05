@@ -1,3 +1,5 @@
+import type { Attachment } from "#modules/chat/domain/attachments";
+
 // What the shopper sees while a step runs, by the name of the graph node or the tool
 const STEP_LABELS: Record<string, string> = {
     query_cache_check: "Checking for a similar answer…",
@@ -32,19 +34,22 @@ export type Step = { label: string; status: "started" | "finished"; durationMs?:
 type StreamEvent = { method: string; params: { node?: string; data?: any } };
 
 /**
- * Reads the events of a graph run and passes on two things as they happen: the reply, piece by
- * piece, and when each step starts and finishes. The reply is either the shopper agent's, or a
- * cached one, which comes in one piece. The other model calls in the graph (recipe ingredients,
+ * Reads the events of a graph run and passes on three things as they happen: the reply, piece by
+ * piece, when each step starts and finishes, and the attachments of the reply (structured data for
+ * the UI to render), as soon as they are ready. The reply is either the shopper agent's, or a cached one,
+ * which comes in one piece, with its attachments. The other model calls in the graph (recipe ingredients,
  * cleaning text for the cache, follow-ups) are not part of the reply.
  * @param run - The stream returned by the graph's streamEvents
  * @param onToken - Called with each piece of the reply
  * @param onStep - Called when a step starts, and when it finishes with how long it took
+ * @param onAttachments - Called with the attachments of the reply (structured data for the UI to render), before the rest of the graph is done
  * @param tools - The tools of the graph, to find out which source a tool comes from
  */
 export async function readRun(
     run: AsyncIterable<StreamEvent>,
     onToken: (text: string) => void,
     onStep: (step: Step) => void,
+    onAttachments: (attachments: Attachment[]) => void,
     tools: { name: string; metadata?: Record<string, unknown> }[]
 ) {
     const startTimes = new Map<string, number>();
@@ -74,6 +79,10 @@ export async function readRun(
             // A cached reply is known as soon as the cache check is done, so it can be shown before the rest of the graph is
             if (params.node === "query_cache_check" && data.values.cacheStatus === "hit") {
                 onToken(data.values.messages.at(-1).text);
+                if (data.values.attachments?.length) onAttachments(data.values.attachments);
+            } else if (params.node === "personal_shopper_agent" && data.values.attachments?.length) {
+                // Only the final reply carries the cards, so this is not sent on the passes that ask for tools
+                onAttachments(data.values.attachments);
             }
         } else if (method === "lifecycle") {
             // "root" is the whole run, and the "tools" node is reported through its tool calls instead

@@ -14,20 +14,8 @@ export class SessionService {
             usernameDisplay.textContent = `Hello, ${userName}`;
         }
 
-        // Try to get existing session ID from localStorage first
-        const existingSessionId = localStorage.getItem('shopping-session-id');
-        const existingUserName = localStorage.getItem('shopping-user-name');
-
-        if (existingSessionId && existingUserName === userName.toLowerCase()) {
-            // Use existing session for the same user
-            this.sessionId = existingSessionId;
-        } else {
-            // Create new session ID and store it
-            this.sessionId = `${userName.toLowerCase()}-${Date.now()}`;
-            localStorage.setItem('shopping-session-id', this.sessionId);
-            localStorage.setItem('shopping-user-name', userName.toLowerCase());
-        }
-
+        // Every page load is a new conversation. An earlier one is picked from the Context tab.
+        this.sessionId = `${userName.toLowerCase()}-${Date.now()}`;
         this.userId = userName.toLowerCase();
 
         return {
@@ -39,7 +27,6 @@ export class SessionService {
 
     switchSession(sessionId) {
         this.sessionId = sessionId;
-        localStorage.setItem('shopping-session-id', sessionId);
     }
 
     getSessionId() {

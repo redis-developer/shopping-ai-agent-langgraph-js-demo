@@ -5,56 +5,15 @@ export class ChatMessage {
     /**
      * @param {string} message - The message text.
      * @param {'user' | 'assistant'} sender
-     * @param {Object} [details] - Assistant response details: isCachedResponse, responseTime, usage, createdAt, attachments.
-     * @param {(productId: string, buttonElement: HTMLElement) => void} [onProductAction] - Called when a product card's add button is clicked.
-     * @param {(productId: string) => void} [onProductOpen] - Called when a product card is clicked.
+     * @param {Object} [details] - Assistant response details: isCachedResponse, responseTime, usage, createdAt.
      */
-    constructor(message, sender, details = {}, onProductAction = null, onProductOpen = null) {
+    constructor(message, sender, details = {}) {
         this.message = message;
         this.sender = sender;
         this.isCached = details.isCachedResponse || false;
         this.responseTime = details.responseTime ?? null;
         this.usage = details.usage || null;
         this.createdAt = details.createdAt ? new Date(details.createdAt) : new Date();
-        this.attachments = details.attachments || [];
-        this.onProductAction = onProductAction;
-        this.onProductOpen = onProductOpen;
-    }
-
-    createProductCards() {
-        const productSummaries = this.attachments
-            .filter((attachment) => attachment.type === 'productSummary')
-            .map((attachment) => attachment.data);
-        if (productSummaries.length === 0) return null;
-
-        const list = document.createElement('ul');
-        list.className = 'chat-product-list';
-
-        productSummaries.forEach((product) => {
-            const card = document.getElementById(DOM_IDS.PRODUCT_CARD_TEMPLATE).content.firstElementChild.cloneNode(true);
-            card.querySelector('.chat-product-image').textContent = product.image;
-            card.querySelector('.chat-product-name').textContent = product.name;
-            card.querySelector('.chat-product-name').href = `/products/${product.id}`;
-            card.querySelector('.chat-product-rating').textContent = product.rating ? ` · ⭐ ${product.rating}` : '';
-            const price = card.querySelector('.price');
-            price.value = product.price;
-            price.textContent = `₹${product.price}`;
-
-            card.querySelector('.chat-product-add').addEventListener('click', async (event) => {
-                await this.onProductAction?.(product.id, event.currentTarget);
-            });
-
-            // Clicking anywhere else on the card shows the product page
-            card.addEventListener('click', (event) => {
-                if (event.target.closest('button')) return;
-                event.preventDefault();
-                this.onProductOpen?.(product.id);
-            });
-
-            list.appendChild(card);
-        });
-
-        return list;
     }
 
     createResponseInfo() {
@@ -99,12 +58,6 @@ export class ChatMessage {
         const time = messageDiv.querySelector('.message-time');
         time.dateTime = this.createdAt.toISOString();
         time.textContent = MessageFormatter.formatTimestamp(this.createdAt);
-
-        // Product cards go between the reply text and the time
-        if (!isUser) {
-            const productCards = this.createProductCards();
-            if (productCards) time.before(productCards);
-        }
 
         return messageDiv;
     }

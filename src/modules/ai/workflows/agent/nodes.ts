@@ -38,7 +38,7 @@ type ToolResult = {
  * Node 1: Query Cache Check
  */
 export const queryCacheCheck = async (state: ShoppingAgentStateType) => {
-    const lastUserMessage = state.messages.findLast((message) => message.getType() === "human");
+    const lastUserMessage = state.messages.findLast((message) => message.type === "human");
     const userQuery = (lastUserMessage?.content || "") as string;
 
     // Look-up of similar responses is turned off in the UI, so skip the semantic cache lookup
@@ -87,7 +87,7 @@ export const queryCacheCheck = async (state: ShoppingAgentStateType) => {
 export const frontDeskAgent = async (state: ShoppingAgentStateType) => {
     console.log('🏢 Front desk screening request for content safety...');
 
-    const lastUserMessage = state.messages.findLast((message) => message.getType() === "human");
+    const lastUserMessage = state.messages.findLast((message) => message.type === "human");
     const userQuery = (lastUserMessage?.content || "") as string;
 
     console.log(`🔍 Front desk screening query: "${userQuery.substring(0, 50)}..."`);
@@ -122,11 +122,11 @@ export const frontDeskAgent = async (state: ShoppingAgentStateType) => {
  * (e.g. "pasta ingredients" surfaces a stored gluten-free preference).
  * Only preferences are retrieved. Other memories the service extracts, such as dated
  * product, price or cart facts, would let the agent answer from memory instead of calling
- * its tools, and then no product cards are shown.
+ * its tools, and then no attachments are shown.
  * Runs once per turn, before the shopper agent starts calling tools.
  */
 export const retrieveLongTermMemories = async (state: ShoppingAgentStateType) => {
-    const lastUserMessage = state.messages.findLast((message) => message.getType() === "human");
+    const lastUserMessage = state.messages.findLast((message) => message.type === "human");
     const query = (lastUserMessage?.content || "") as string;
 
     const memories = await searchShopperPreferences(state.userId, query);
@@ -176,7 +176,11 @@ ${shopperIdBlock}${userContextBlock}${conversationSummaryBlock}
 
         // The messages reducer appends the reply. If it has tool calls, the graph
         // routes to the tools node and then back here; otherwise it moves on.
-        return { messages: [response] };
+        // The cards go with the final reply only, or the attachments reducer would add them again on every pass.
+        if (response.tool_calls?.length) {
+            return { messages: [response] };
+        }
+        return { messages: [response], attachments: productAttachments(state) };
     } catch (error) {
         console.error("❌ Grocery shopping agent error:", error);
         const apology = "I apologize, but I'm having trouble with your shopping request right now. Please try asking about recipe ingredients, searching for products, or managing your cart!";
@@ -194,26 +198,11 @@ ${shopperIdBlock}${userContextBlock}${conversationSummaryBlock}
  */
 export const toolNode = new ToolNode(allTools);
 
-/**
- * Node 6: Process Results for caching
- * Collects the products the tools found this turn (the UI shows them as product cards)
- * and saves the reply together with them to the semantic cache.
- */
-export const processWorkOutputWithCaching = async (state: ShoppingAgentStateType) => {
-    // Nothing to cache if the model call failed (the reply is just an apology)
-    if (state.error) {
-        return {};
-    }
-
-    const reply = state.messages.at(-1)!.text;
-
-    const lastUserMessage = state.messages.findLast((message) => message.getType() === "human");
-    const query = (lastUserMessage?.content || "") as string;
-
-    // The history loaded from Agent Memory has no tool messages, so every tool
-    // message in state.messages belongs to the current turn
-    const toolMessages = state.messages
-        .filter((message) => message.getType() === "tool")
+// What the tools returned this turn. The history loaded from Agent Memory has no tool messages,
+// so every tool message in state.messages belongs to the current turn.
+function readToolResults(state: ShoppingAgentStateType) {
+    return state.messages
+        .filter((message) => message.type === "tool")
         .map((toolMessage) => {
             let result: ToolResult;
             try {
@@ -223,10 +212,12 @@ export const processWorkOutputWithCaching = async (state: ShoppingAgentStateType
             }
             return { toolName: toolMessage.name as string, result };
         });
+}
 
-    // Products the tools found this turn
+// The products the tools found this turn, as attachments for the UI to render
+function productAttachments(state: ShoppingAgentStateType) {
     const attachments: Attachment[] = [];
-    for (const { result } of toolMessages) {
+    for (const { result } of readToolResults(state)) {
         const products = result.products || [];
         for (const product of products) {
             if (!attachments.some((attachment) => attachment.data.id === product.id)) {
@@ -243,15 +234,32 @@ export const processWorkOutputWithCaching = async (state: ShoppingAgentStateType
             }
         }
     }
+    return attachments;
+}
+
+/**
+ * Node 6: Process Results for caching
+ * Saves the reply, together with its attachments, to the semantic cache.
+ */
+export const processWorkOutputWithCaching = async (state: ShoppingAgentStateType) => {
+    // Nothing to cache if the model call failed (the reply is just an apology)
+    if (state.error) {
+        return {};
+    }
+
+    const reply = state.messages.at(-1)!.text;
+
+    const lastUserMessage = state.messages.findLast((message) => message.type === "human");
+    const query = (lastUserMessage?.content || "") as string;
 
     // Determine cache TTL based on tool execution results
-    const toolResults = toolMessages.map(({ toolName, result }) => ({ toolName, success: result.success !== false, source: toolSources.get(toolName) }));
+    const toolResults = readToolResults(state).map(({ toolName, result }) => ({ toolName, success: result.success !== false, source: toolSources.get(toolName) }));
     const cacheTTL = determineToolBasedCacheTTL(toolResults);
 
     // Don't cache if TTL is 0 (personal/dynamic operations or failures)
     if (cacheTTL === 0) {
         console.log("Skipping cache for personal/dynamic operations or tool failures");
-        return { attachments };
+        return {};
     }
 
     try {
@@ -265,7 +273,7 @@ export const processWorkOutputWithCaching = async (state: ShoppingAgentStateType
 
         await saveToSemanticCache(
             sanitizedQuery,
-            { content: sanitizedResponse, attachments },
+            { content: sanitizedResponse, attachments: state.attachments },
             cacheTTL,
             state.userId
         );
@@ -277,7 +285,7 @@ export const processWorkOutputWithCaching = async (state: ShoppingAgentStateType
         // Don't fail the whole request if caching fails
     }
 
-    return { attachments };
+    return {};
 };
 
 /**
@@ -292,7 +300,7 @@ export const generateSuggestedFollowUps = async (state: ShoppingAgentStateType) 
         return {};
     }
 
-    const lastUserMessage = state.messages.findLast((message) => message.getType() === "human");
+    const lastUserMessage = state.messages.findLast((message) => message.type === "human");
     const reply = state.messages.at(-1)!.text;
 
     const preferencesBlock = state.longTermMemories?.length

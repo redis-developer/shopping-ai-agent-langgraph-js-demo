@@ -4,11 +4,9 @@ import { TypingIndicator } from './typing-indicator.js';
 import { DOM_IDS } from '@utils/constants.js';
 
 export class ChatWindow {
-    constructor(messagesContainerId, onProductAction = null, onProductOpen = null) {
+    constructor(messagesContainerId) {
         this.messagesContainer = document.getElementById(messagesContainerId);
         this.typingIndicator = new TypingIndicator(this.messagesContainer);
-        this.onProductAction = onProductAction;
-        this.onProductOpen = onProductOpen;
         this.streamingReply = null; // The assistant's reply while it is still being written
         this.replyFooter = null; // The footer after the latest assistant message: its follow-ups and usage breakdown
         this.streamingText = '';
@@ -17,18 +15,13 @@ export class ChatWindow {
     /**
      * @param {string} message - The message text.
      * @param {'user' | 'assistant'} sender
-     * @param {Object} [details] - Assistant response details: isCachedResponse, responseTime, usage, attachments.
+     * @param {Object} [details] - Assistant response details: isCachedResponse, responseTime, usage.
+     * @returns {HTMLElement | undefined} The message as it is shown in the chat.
      */
     addMessage(message, sender, details = {}) {
         if (!this.messagesContainer) return;
 
-        const chatMessage = new ChatMessage(
-            message,
-            sender,
-            details,
-            this.onProductAction,
-            this.onProductOpen
-        );
+        const chatMessage = new ChatMessage(message, sender, details);
 
         const messageElement = chatMessage.createElement();
         if (sender === 'assistant' && this.streamingReply) {
@@ -46,6 +39,7 @@ export class ChatWindow {
             messageElement.after(this.replyFooter);
         }
         this.scrollToBottom();
+        return messageElement;
     }
 
     /**
@@ -114,6 +108,14 @@ export class ChatWindow {
         if (this.messagesContainer) {
             this.messagesContainer.scrollTop = this.messagesContainer.scrollHeight;
         }
+    }
+
+    /**
+     * Scrolls the chat to a message, for example the answer that a set of results belongs to.
+     * @param {HTMLElement} messageElement
+     */
+    scrollToMessage(messageElement) {
+        messageElement.scrollIntoView({ block: 'start' });
     }
 
     clear() {

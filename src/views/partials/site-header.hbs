@@ -1,0 +1,24 @@
+<header class="header">
+    <div class="header-container">
+        <div class="logo-section">
+            <h1 class="site-logo">
+                <a href="/app">
+                    <i class="fas fa-shopping-basket"></i>
+                    {{appName}}
+                </a>
+            </h1>
+        </div>
+
+        <div class="header-actions">
+            <p class="user-info">
+                <i class="fas fa-user-circle"></i>
+                <span id="username-display">Hello, user</span>
+            </p>
+            <p class="cart-info">
+                <i class="fas fa-shopping-cart"></i>
+                <span class="cart-count">0</span>
+            </p>
+            {{> github_link}}
+        </div>
+    </div>
+</header>
