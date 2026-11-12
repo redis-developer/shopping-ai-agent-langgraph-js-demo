@@ -75,7 +75,7 @@ export function fetchSessionMessages(sessionId) {
  * What the assistant is doing, the reply's text and its attachments arrive first, as they are ready.
  * @param {Response} res
  * @param {(text: string) => void} [onToken]
- * @param {(step: {label: string, status: 'started'|'finished', durationMs?: number}) => void} [onStep]
+ * @param {(step: {key: string, label: string, status: 'started'|'finished', durationMs?: number}) => void} [onStep]
  * @param {(attachments: Array) => void} [onAttachments] - called with the attachments, which arrive before the reply is complete
  * @returns {Promise<{content: string, attachments?: Array, suggestedFollowUps?: string[], usage?: Object, isCachedResponse: boolean}>}
  */
@@ -125,7 +125,7 @@ async function readReply(res, onToken, onStep, onAttachments) {
  * @param {Object} [options]
  * @param {() => void} [options.onLoad]                 - called before fetch
  * @param {(text: string) => void} [options.onToken]    - called with each piece of the reply as it is written
- * @param {(step: {label: string, status: 'started'|'finished', durationMs?: number}) => void} [options.onStep] - called when a step starts and finishes
+ * @param {(step: {key: string, label: string, status: 'started'|'finished', durationMs?: number}) => void} [options.onStep] - called when a step starts and finishes
  * @param {(attachments: Array) => void} [options.onAttachments] - called with the attachments as soon as they are ready, before the reply is complete
  * @param {(reply: string) => void} [options.onSuccess] - called with assistant reply
  * @param {(error: any) => void} [options.onError]      - called on fetch or server error

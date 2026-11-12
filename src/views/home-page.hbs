@@ -273,8 +273,21 @@
                             <span class="typing-dots" role="status" aria-label="The assistant is typing">
                                 <span></span><span></span><span></span>
                             </span>
-                            <p class="typing-status"></p>
                         </div>
+                    </li>
+                </template>
+
+                <template id="task-progress-template">
+                    <li class="task-progress">
+                        <ol class="task-list" aria-label="What the assistant did"></ol>
+                    </li>
+                </template>
+
+                <template id="task-template">
+                    <li class="task">
+                        <progress class="spinning-donut"></progress>
+                        <span class="task-label"></span>
+                        <time class="task-duration"></time>
                     </li>
                 </template>
 

@@ -25,6 +25,8 @@ export const DOM_IDS = {
     ASSISTANT_MESSAGE_TEMPLATE: 'assistant-message-template', // Template for a reply of the assistant
     RESPONSE_INFO_TEMPLATE: 'response-info-template', // Template for the usage breakdown under a reply
     TYPING_INDICATOR_TEMPLATE: 'typing-indicator-template', // Template for the dots shown while the assistant works
+    TASK_PROGRESS_TEMPLATE: 'task-progress-template', // Template for the tasks of the assistant, which stay above the reply
+    TASK_TEMPLATE: 'task-template', // Template for one task in that list
     NEW_CHAT_MESSAGE_TEMPLATE: 'new-chat-message-template', // Template for the message shown in an empty chat
     REPLY_FOOTER_TEMPLATE: 'reply-footer-template', // Template for what goes under a reply (follow-up buttons)
     SUGGESTION_TEMPLATE: 'suggestion-template' // Template for one suggested follow-up button

@@ -261,10 +261,101 @@
     }
 }
 
-.typing-status {
-    margin: 4px 0 0;
-    font-size: 0.85rem;
+/* The tasks the assistant works through, above the reply */
+.task-progress {
+    list-style: none;
+}
+
+.task-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-bottom: 0.75rem;
+}
+
+.task {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    line-height: 1.4;
+    color: var(--text-muted);
+}
+
+/* The marker of a task is a progress element, drawn here: busy while it has no value, a check mark when it is full */
+.task progress {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 12px;
+    height: 12px;
+    border: 0;
+    background: transparent;
+    flex-shrink: 0;
+}
+
+/* One rule for each browser: a browser drops a whole rule when one of its selectors is a pseudo-element it does not know */
+.task progress::-webkit-progress-bar {
+    background: transparent;
+}
+
+.task progress::-webkit-progress-value {
+    background: transparent;
+}
+
+.task progress::-moz-progress-bar {
+    background: transparent;
+}
+
+/* The marker of a running task. Which one is used is set by the class of the progress in the task template. */
+.task progress.pulsing-dot:indeterminate {
+    background: var(--warning);
+    border-radius: 50%;
+    animation: task-pulse 1.2s ease-in-out infinite;
+}
+
+.task progress.spinning-donut:indeterminate {
+    border: 3px solid color-mix(in srgb, var(--dark) 15%, transparent);
+    border-top-color: var(--warning);
+    border-radius: 50%;
+    animation: task-spin 0.8s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .task progress:indeterminate {
+        animation: none;
+    }
+}
+
+/* A task that is done: a green check mark (the color is --success, which a background image cannot use as a variable) */
+.task progress[value] {
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2 6.5l3 3 5-7' fill='none' stroke='%234CAF50' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+
+.task.running {
+    color: var(--dark);
+}
+
+.task-duration {
+    font-variant-numeric: tabular-nums;
     opacity: 0.7;
+}
+
+@keyframes task-pulse {
+    0%, 100% {
+        transform: scale(0.7);
+        opacity: 0.6;
+    }
+    50% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+@keyframes task-spin {
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 @keyframes typing {

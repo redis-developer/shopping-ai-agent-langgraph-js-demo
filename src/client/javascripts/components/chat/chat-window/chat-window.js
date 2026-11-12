@@ -96,8 +96,8 @@ export class ChatWindow {
         this.typingIndicator.show();
     }
 
-    showStatus(label) {
-        this.typingIndicator.setStatus(label);
+    showTask(step) {
+        this.typingIndicator.showTask(step);
     }
 
     hideTypingIndicator() {

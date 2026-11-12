@@ -2,21 +2,21 @@ import type { Attachment } from "#modules/chat/domain/attachments";
 
 // What the shopper sees while a step runs, by the name of the graph node or the tool
 const STEP_LABELS: Record<string, string> = {
-    query_cache_check: "Checking for a similar answer…",
-    front_desk_agent: "Checking your request…",
-    retrieve_long_term_memories: "Recalling your preferences…",
-    personal_shopper_agent: "Thinking…",
-    process_work_output_with_caching: "Saving this answer for next time…",
-    generate_suggested_follow_ups: "Lining up next steps…",
+    query_cache_check: "Checking for a similar answer",
+    front_desk_agent: "Checking your request",
+    retrieve_long_term_memories: "Recalling your preferences",
+    personal_shopper_agent: "Thinking",
+    process_work_output_with_caching: "Saving this answer for next time",
+    generate_suggested_follow_ups: "Lining up next steps",
 
-    search_products: "Searching products…",
-    get_recipe_ingredients: "Finding ingredients for your recipe…",
-    add_to_cart: "Adding to your cart…",
-    view_cart: "Checking your cart…",
-    clear_cart: "Emptying your cart…",
-    save_memory: "Noting that for next time…",
-    search_my_memories: "Looking through what I remember…",
-    view_recent_conversation: "Reading back our chat…",
+    search_products: "Searching products",
+    get_recipe_ingredients: "Finding ingredients for your recipe",
+    add_to_cart: "Adding to your cart",
+    view_cart: "Checking your cart",
+    clear_cart: "Emptying your cart",
+    save_memory: "Noting that for next time",
+    search_my_memories: "Looking through what I remember",
+    view_recent_conversation: "Reading back our chat",
 };
 
 // Shown for a node or tool that has no label above
@@ -28,7 +28,8 @@ const SOURCE_LABELS: Record<string, string> = {
     "context-retriever": "Retrieving live context",
 };
 
-export type Step = { label: string; status: "started" | "finished"; durationMs?: number };
+// The key tells which step a "finished" belongs to: the tool call ID of a tool, or the name of a node
+export type Step = { key: string; label: string; status: "started" | "finished"; durationMs?: number };
 
 // The part of an event from the graph's stream that is used here
 type StreamEvent = { method: string; params: { node?: string; data?: any } };
@@ -62,9 +63,9 @@ export async function readRun(
         const label = (source && SOURCE_LABELS[source]) ?? STEP_LABELS[name] ?? UNKNOWN_STEP_LABEL;
         if (status === "started") {
             startTimes.set(key, performance.now());
-            onStep({ label, status });
+            onStep({ key, label, status });
         } else {
-            onStep({ label, status, durationMs: Math.round(performance.now() - (startTimes.get(key) ?? performance.now())) });
+            onStep({ key, label, status, durationMs: Math.round(performance.now() - (startTimes.get(key) ?? performance.now())) });
         }
     };
 
