@@ -1,4 +1,5 @@
 import { tool } from "@langchain/core/tools";
+import { log } from "#lib/log";
 
 import CONFIG from "#config";
 import { getContextRetrieverClient } from "./context-retriever-client.ts";
@@ -23,7 +24,7 @@ export async function getContextRetrieverTools() {
 
         return mcpTools.map((mcpTool) => tool(
             async (args) => {
-                console.log(`📕 Context Retriever: ${mcpTool.name}`, args);
+                console.log(`${mcpTool.name}: ${JSON.stringify(args)}`);
 
                 // The connection is fetched again for each call, since a session can end
                 const result = await (await getContextRetrieverClient()).callTool(mcpTool.name, args as Record<string, unknown>);

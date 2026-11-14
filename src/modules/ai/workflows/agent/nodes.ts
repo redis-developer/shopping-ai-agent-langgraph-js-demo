@@ -1,4 +1,5 @@
 import { AIMessage, HumanMessage } from "@langchain/core/messages";
+import type { RunnableConfig } from "@langchain/core/runnables";
 import { z } from "zod";
 import { ToolNode } from "@langchain/langgraph/prebuilt";
 import { shoppingTools, entityQueryTools } from "./tools/shopping-tools.ts";
@@ -11,6 +12,7 @@ import { getProductImage } from "#modules/products/domain/product-service";
 import type { Attachment } from "#modules/chat/domain/attachments";
 import type { ShoppingAgentStateType } from "./state.ts";
 import { createChatModel, sanitizeForCache, guardrails } from "../../providers/index.ts";
+import { log } from "#lib/log";
 
 // The tools of the Context Retriever surface, loaded once when the app starts. Empty when it is not set up.
 const contextRetrieverTools = await getContextRetrieverTools();
@@ -37,23 +39,24 @@ type ToolResult = {
 /**
  * Node 1: Query Cache Check
  */
-export const queryCacheCheck = async (state: ShoppingAgentStateType) => {
+export const queryCacheCheck = async (state: ShoppingAgentStateType, config: RunnableConfig) => {
+    const nodeName = config.metadata?.langgraph_node;
     const lastUserMessage = state.messages.findLast((message) => message.type === "human");
     const userQuery = (lastUserMessage?.content || "") as string;
 
     // Look-up of similar responses is turned off in the UI, so skip the semantic cache lookup
     if (state.lookupSimilarResponses === false) {
-        console.log("⏭️ Look-up of similar responses is off - skipping the semantic cache lookup");
+        log(`${nodeName}: look-up of similar responses is off, skipping the semantic cache`);
         return { cacheStatus: "miss" };
     }
 
-    console.log(`🔍 Checking semantic cache for: "${userQuery.substring(0, 50)}..."`);
+    log(`${nodeName}: checking for "${userQuery.substring(0, 50)}"`);
     
     try {
         const cachedResponse = await checkSemanticCache(userQuery);
 
         if (cachedResponse) {
-            console.log("🎯 Semantic cache HIT - returning previous response");
+            log(`${nodeName}: semantic cache HIT, returning the previous response`);
             return {
                 cacheStatus: "hit",
                 messages: [...state.messages, new AIMessage(cachedResponse.content)],
@@ -62,7 +65,7 @@ export const queryCacheCheck = async (state: ShoppingAgentStateType) => {
             };
         }
         
-        console.log("❌ Semantic cache MISS - proceeding to agent");
+        log(`${nodeName}: semantic cache MISS, going on to the agent`);
         return { 
             cacheStatus: "miss",
             sessionId: state.sessionId
@@ -84,18 +87,17 @@ export const queryCacheCheck = async (state: ShoppingAgentStateType) => {
  * and approved requests pass through to the personal shopper agent.
  * Only part of the graph when the provider has guardrails.
  */
-export const frontDeskAgent = async (state: ShoppingAgentStateType) => {
-    console.log('🏢 Front desk screening request for content safety...');
-
+export const frontDeskAgent = async (state: ShoppingAgentStateType, config: RunnableConfig) => {
+    const nodeName = config.metadata?.langgraph_node;
     const lastUserMessage = state.messages.findLast((message) => message.type === "human");
     const userQuery = (lastUserMessage?.content || "") as string;
 
-    console.log(`🔍 Front desk screening query: "${userQuery.substring(0, 50)}..."`);
+    log(`${nodeName}: screening "${userQuery.substring(0, 50)}"`);
 
     const verdict = await guardrails!.checkInput(userQuery);
 
     if (verdict.blocked) {
-        console.log('🛡️ Front desk blocked irrelevant query - using default response');
+        log(`${nodeName}: blocked an irrelevant query, using the default response`);
 
         return {
             messages: [...state.messages, new AIMessage(verdict.message)],
@@ -105,7 +107,7 @@ export const frontDeskAgent = async (state: ShoppingAgentStateType) => {
         };
     }
 
-    console.log('✅ Front desk approved - directing to shopping assistant');
+    log(`${nodeName}: approved, directing to the shopping assistant`);
 
     return {
         ...state,
@@ -125,10 +127,11 @@ export const frontDeskAgent = async (state: ShoppingAgentStateType) => {
  * its tools, and then no attachments are shown.
  * Runs once per turn, before the shopper agent starts calling tools.
  */
-export const retrieveLongTermMemories = async (state: ShoppingAgentStateType) => {
+export const retrieveLongTermMemories = async (state: ShoppingAgentStateType, config: RunnableConfig) => {
     const lastUserMessage = state.messages.findLast((message) => message.type === "human");
     const query = (lastUserMessage?.content || "") as string;
 
+    log(`${config.metadata?.langgraph_node}: looking up "${query.substring(0, 50)}"`);
     const memories = await searchShopperPreferences(state.userId, query);
 
     return { longTermMemories: memories.map((memory) => memory.text) };
@@ -139,7 +142,7 @@ export const retrieveLongTermMemories = async (state: ShoppingAgentStateType) =>
  *
  * Specialized agent with tools for shopping-related tasks
  */
-export const personalShopperAgent = async (state: ShoppingAgentStateType) => {
+export const personalShopperAgent = async (state: ShoppingAgentStateType, config: RunnableConfig) => {
     const model = createChatModel({ temperature: 0.1 });
 
     // Long-term memories were retrieved by the retrieve_long_term_memories node
@@ -168,6 +171,7 @@ ${shopperIdBlock}${userContextBlock}${conversationSummaryBlock}
 
     const modelWithTools = model.bindTools(allTools);
 
+    log(`${config.metadata?.langgraph_node}: ${state.messages.length} messages, ${state.longTermMemories?.length ?? 0} memories in the prompt`);
     try {
         const response = await modelWithTools.invoke([
             { role: "system", content: systemPrompt },
@@ -241,7 +245,7 @@ function productAttachments(state: ShoppingAgentStateType) {
  * Node 6: Process Results for caching
  * Saves the reply, together with its attachments, to the semantic cache.
  */
-export const processWorkOutputWithCaching = async (state: ShoppingAgentStateType) => {
+export const processWorkOutputWithCaching = async (state: ShoppingAgentStateType, config: RunnableConfig) => {
     // Nothing to cache if the model call failed (the reply is just an apology)
     if (state.error) {
         return {};
@@ -252,13 +256,16 @@ export const processWorkOutputWithCaching = async (state: ShoppingAgentStateType
     const lastUserMessage = state.messages.findLast((message) => message.type === "human");
     const query = (lastUserMessage?.content || "") as string;
 
+    const nodeName = config.metadata?.langgraph_node;
+    log(`${nodeName}: deciding what to cache`);
+
     // Determine cache TTL based on tool execution results
     const toolResults = readToolResults(state).map(({ toolName, result }) => ({ toolName, success: result.success !== false, source: toolSources.get(toolName) }));
     const cacheTTL = determineToolBasedCacheTTL(toolResults);
 
     // Don't cache if TTL is 0 (personal/dynamic operations or failures)
     if (cacheTTL === 0) {
-        console.log("Skipping cache for personal/dynamic operations or tool failures");
+        log(`${nodeName}: not cached, a personal or dynamic result, or a tool failed`);
         return {};
     }
 
@@ -269,7 +276,7 @@ export const processWorkOutputWithCaching = async (state: ShoppingAgentStateType
             sanitizeForCache(reply)
         ]);
 
-        console.log(`💾 Saving sanitized query to cache: "${sanitizedQuery.substring(0, 50)}..."`);
+        log(`${nodeName}: saving "${sanitizedQuery.substring(0, 50)}" to the semantic cache for ${Math.round(cacheTTL / (60 * 60 * 1000))}h`);
 
         await saveToSemanticCache(
             sanitizedQuery,
@@ -277,8 +284,6 @@ export const processWorkOutputWithCaching = async (state: ShoppingAgentStateType
             cacheTTL,
             state.userId
         );
-
-        console.log(`💾 Cached with TTL: ${cacheTTL}ms (${Math.round(cacheTTL / (60 * 60 * 1000))}h)`);
 
     } catch (error) {
         console.error('Error in GDPR-compliant caching:', error);
@@ -294,7 +299,7 @@ export const processWorkOutputWithCaching = async (state: ShoppingAgentStateType
  * the shopper's saved preferences. They are not cached, so each shopper gets their own,
  * also when the reply came from the cache.
  */
-export const generateSuggestedFollowUps = async (state: ShoppingAgentStateType) => {
+export const generateSuggestedFollowUps = async (state: ShoppingAgentStateType, config: RunnableConfig) => {
     // No follow-ups after a failed model call or a blocked request
     if (state.error || state.guardrailTestResult === "blocked") {
         return {};
@@ -351,6 +356,7 @@ ${preferencesBlock}`;
             new HumanMessage(`Shopper: ${lastUserMessage?.text}\n\nAssistant: ${reply}`)
         ]);
 
+        log(`${config.metadata?.langgraph_node}: ${followUps.slice(0, 3).length} suggested`);
         return { suggestedFollowUps: followUps.slice(0, 3) };
     } catch (error) {
         // The reply is complete without them

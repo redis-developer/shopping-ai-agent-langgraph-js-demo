@@ -2,6 +2,7 @@ import { runShoppingAgentWorkflow } from '#modules/ai/workflows/agent/index';
 import type { Step } from '#modules/ai/workflows/agent/stream-events';
 import type { Attachment } from './attachments.ts';
 import { getWorkingMemory, listSessionIds, searchShopperPreferences } from './agent-memory-service.ts';
+import { log } from '#lib/log';
 
 // How many of the shopper's latest sessions the context lists
 const MAX_LISTED_SESSIONS = 10;
@@ -27,6 +28,7 @@ export async function processShoppingInquiry(userId: string, sessionId: string, 
  * @param sessionId - The current session ID
  */
 export async function getShopperContext(userId: string, sessionId: string) {
+    log('getShopperContext');
     const [preferences, sessionIds, currentSession] = await Promise.all([
         searchShopperPreferences(userId, 'preferences', 20),
         listSessionIds(userId),

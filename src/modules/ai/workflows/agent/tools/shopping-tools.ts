@@ -7,6 +7,7 @@ import { z } from "zod";
 import { searchProducts } from '#modules/products/domain/product-service';
 import { addItemsToCart, getCart, clearCart } from '#modules/cart/domain/cart-service';
 import { createChatModel } from '../../../providers/index.ts';
+import { log } from '#lib/log';
 
 const recipeIngredientsSchema = z.object({
     recipe: z.string().describe("recipe name"),
@@ -52,8 +53,8 @@ Rules:
  * Provides the essential ingredients for a recipe, with their quantities. The agent then finds a product for each one.
  */
 export const recipeIngredientsTool = tool(
-    async ({ recipe }) => {
-        console.log(`🍳 Recipe ingredients for: "${recipe}"`);
+    async ({ recipe }, config) => {
+        log(`${config.toolCall?.name}: "${recipe}"`);
 
         try {
             const ingredientsData = await getIngredientsFromLLM(recipe);
@@ -61,10 +62,7 @@ export const recipeIngredientsTool = tool(
             // Essential ingredients only
             const essentialIngredients = ingredientsData.ingredients.filter(ing => ing.essential).slice(0, 6);
 
-            console.log(`🍽️ Ingredients:`);
-            essentialIngredients.forEach(item => {
-                console.log(`- ${item.name} (Quantity: ${item.quantity})`);
-            });
+            log(`${config.toolCall?.name}: Essential ingredients - ${essentialIngredients.map((ingredient) => `${ingredient.name} (${ingredient.quantity})`).join(', ')}`);
 
             return {
                 success: true,
@@ -94,8 +92,8 @@ export const recipeIngredientsTool = tool(
  * Returns structured product data with clickable links
  */
 export const searchProductsTool = tool(
-    async ({ query, category, maxPrice, minRating, limit = 8, useSemanticSearch = true }) => {
-        console.log(`🔍 Searching products: "${query}"`);
+    async ({ query, category, maxPrice, minRating, limit = 8, useSemanticSearch = true }, config) => {
+        log(`${config.toolCall?.name}: "${query}"`);
 
         try {
             let result = await searchProducts({
@@ -109,7 +107,7 @@ export const searchProductsTool = tool(
 
             // If no results and we have a category filter, try again without category
             if (result.products.length === 0 && category) {
-                console.log(`🔄 No results with category "${category}", retrying without category filter...`);
+                log(`${config.toolCall?.name}: no results in the category "${category}", trying again without it`);
                 result = await searchProducts({
                     query,
                     maxPrice,
@@ -168,7 +166,7 @@ export const searchProductsTool = tool(
 export const addToCartTool = tool(
     async ({ productIds, quantities }, config) => {
         const userId = config?.configurable?.userId;
-        console.log(`🛒 Adding to cart: ${productIds.join(", ")}`);
+        log(`${config.toolCall?.name}: ${productIds.join(", ")}`);
 
         try {
             const result = await addItemsToCart(userId, productIds, quantities);
@@ -204,7 +202,7 @@ export const addToCartTool = tool(
 export const viewCartTool = tool(
     async (_args, config) => {
         const userId = config?.configurable?.userId;
-        console.log(`Viewing cart for user: ${userId}`);
+        log(`${config.toolCall?.name}`);
 
         try {
             const cart = await getCart(userId);
@@ -242,7 +240,7 @@ export const viewCartTool = tool(
 export const clearCartTool = tool(
     async (_args, config) => {
         const userId = config?.configurable?.userId;
-        console.log(`🗑️ Clearing cart for user: ${userId}`);
+        log(`${config.toolCall?.name}`);
 
         try {
             const result = await clearCart(userId);

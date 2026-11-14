@@ -1,5 +1,6 @@
 import KnowledgeBankRepository from '../data/knowledge-bank-repository.ts';
 import type { CachedResponse } from '../data/knowledge-bank-repository.ts';
+import { log } from '#lib/log';
 
 const knowledgeBankRepository = new KnowledgeBankRepository();
 
@@ -11,6 +12,7 @@ const knowledgeBankRepository = new KnowledgeBankRepository();
  * @param userId - Optional user ID
  */
 export async function saveToSemanticCache(query: string, response: CachedResponse, ttlMillis: number, userId?: string) {
+    log('saveToSemanticCache');
     await knowledgeBankRepository.saveResponseInSemanticCache(
         query,
         response,
@@ -34,5 +36,6 @@ export async function saveToSemanticCache(query: string, response: CachedRespons
  * @returns The cached reply and its products, or null on a miss
  */
 export async function checkSemanticCache(query: string, userId?: string) {
+    log('checkSemanticCache');
     return knowledgeBankRepository.findFromSemanticCache(query, userId);
 }

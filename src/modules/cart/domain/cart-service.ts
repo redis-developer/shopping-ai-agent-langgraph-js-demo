@@ -1,6 +1,7 @@
 import CartRepository from '../data/cart-repository.ts';
 import type { CartItem } from '../data/cart-repository.ts';
 import ProductRepository from '#modules/products/data/product-repository';
+import { log } from '#lib/log';
 
 const cartRepository = new CartRepository();
 const productRepository = new ProductRepository();
@@ -22,6 +23,7 @@ type AddItemResult = {
  * @param quantities - Array of quantities
  */
 export async function addItemsToCart(userId: string, productIds: string[], quantities: number[]) {
+    log(`addItemsToCart: ${productIds.length} products`);
     const addedItems: AddedItem[] = [];
     let totalAdded = 0;
 
@@ -62,8 +64,9 @@ export async function addItemsToCart(userId: string, productIds: string[], quant
  * @param quantity - Quantity to add
  */
 export async function addItemToCart(userId: string, productId: string, quantity = 1): Promise<AddItemResult> {
+    log(`addItemToCart ${productId} × ${quantity}`);
     // Get and validate product
-    const product = await productRepository.getProductById(productId);
+    const product = await productRepository.findProductById(productId);
 
     if (!product) {
         return {
@@ -73,12 +76,12 @@ export async function addItemToCart(userId: string, productId: string, quantity 
     }
 
     // Check if item already exists in cart
-    const existingItem = await cartRepository.checkItemExistsInCart(userId, productId);
+    const existingItem = await cartRepository.findCartItem(userId, productId);
 
     let result;
     if (existingItem) {
         // Update existing item quantity
-        result = await cartRepository.updateItemQuantity(userId, productId, existingItem.quantity + quantity);
+        result = await cartRepository.updateCartItemQuantity(userId, productId, existingItem.quantity + quantity);
     } else {
         // Add new item to cart
         const cartItem = {
@@ -90,7 +93,7 @@ export async function addItemToCart(userId: string, productId: string, quantity 
             quantity: quantity,
             addedAt: new Date().toISOString()
         };
-        result = await cartRepository.addNewItemToCart(userId, cartItem);
+        result = await cartRepository.saveCartItem(userId, cartItem);
     }
 
     if (!result.success) {
@@ -118,7 +121,8 @@ export async function addItemToCart(userId: string, productId: string, quantity 
  * @param userId - User ID
  */
 export async function getCart(userId: string) {
-    const cartData = await cartRepository.getCartData(userId);
+    log('getCart');
+    const cartData = await cartRepository.findCartByUserId(userId);
 
     // If no cart data, return empty cart
     if (!cartData) {
@@ -162,7 +166,8 @@ export async function getCart(userId: string) {
  * @param productId - Product ID to remove
  */
 export async function removeItemFromCart(userId: string, productId: string) {
-    const result = await cartRepository.removeFromCart(userId, productId);
+    log(`removeItemFromCart ${productId}`);
+    const result = await cartRepository.deleteCartItem(userId, productId);
 
     if (result.success) {
         // Get updated cart summary
@@ -182,5 +187,6 @@ export async function removeItemFromCart(userId: string, productId: string) {
  * @param userId - User ID
  */
 export async function clearCart(userId: string) {
-    return cartRepository.clearCart(userId);
+    log('clearCart');
+    return cartRepository.deleteCartItemsByUserId(userId);
 }

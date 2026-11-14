@@ -1,4 +1,5 @@
 import { getRedisClient } from '#modules/db/redis-client';
+import { log } from '#lib/log';
 
 export type CartItem = {
     productId: string;
@@ -35,13 +36,14 @@ export default class CartRepository {
      * @param userId - User ID
      * @param productId - Product ID to check
      */
-    async checkItemExistsInCart(userId: string, productId: string): Promise<CartItem | null> {
+    async findCartItem(userId: string, productId: string): Promise<CartItem | null> {
         const client = await getRedisClient();
         const userKey = `${USER_KEY_PREFIX}${userId}`;
         const existingItem = await client.json.get(userKey, {
             path: `$.cart.items[?(@.productId=='${productId}')]`
         }) as CartItem[] | null;
 
+        log(`🛒 Cart item ${productId}: ${existingItem?.length ? 'in the cart' : 'not in the cart'}`);
         if (existingItem && existingItem.length > 0) {
             return existingItem[0];
         }
@@ -54,13 +56,14 @@ export default class CartRepository {
      * @param productId - Product ID
      * @param newQuantity - New quantity
      */
-    async updateItemQuantity(userId: string, productId: string, newQuantity: number) {
+    async updateCartItemQuantity(userId: string, productId: string, newQuantity: number) {
         const client = await getRedisClient();
         const userKey = `${USER_KEY_PREFIX}${userId}`;
         await client.json.set(userKey, `$.cart.items[?(@.productId=='${productId}')].quantity`, newQuantity);
         await client.json.set(userKey, '$.cart.updatedAt', new Date().toISOString());
         await client.expire(userKey, 24 * 60 * 60);
 
+        log(`🛒 Quantity of ${productId} set to ${newQuantity}`);
         return { success: true };
     }
 
@@ -69,7 +72,7 @@ export default class CartRepository {
      * @param userId - User ID
      * @param cartItem - Cart item object
      */
-    async addNewItemToCart(userId: string, cartItem: CartItem) {
+    async saveCartItem(userId: string, cartItem: CartItem) {
         const client = await getRedisClient();
         const userKey = `${USER_KEY_PREFIX}${userId}`;
 
@@ -109,6 +112,7 @@ export default class CartRepository {
         // Set expiration (24 hours)
         await client.expire(userKey, 24 * 60 * 60);
 
+        log(`🛒 ${cartItem.name} added to the cart`);
         return { success: true };
     }
 
@@ -116,11 +120,12 @@ export default class CartRepository {
      * Get raw cart data from storage
      * @param userId - User ID
      */
-    async getCartData(userId: string): Promise<Cart | null> {
+    async findCartByUserId(userId: string): Promise<Cart | null> {
         const client = await getRedisClient();
         const userKey = `${USER_KEY_PREFIX}${userId}`;
         const cartData = await client.json.get(userKey, { path: '$.cart' }) as Cart[] | null;
 
+        log(`🛒 Cart of ${userId}: ${cartData?.[0]?.items?.length ?? 0} items`);
         if (!cartData || cartData.length === 0 || !cartData[0]) {
             return null;
         }
@@ -133,7 +138,8 @@ export default class CartRepository {
      * @param userId - User ID
      * @param productId - Product ID to remove
      */
-    async removeFromCart(userId: string, productId: string) {
+    async deleteCartItem(userId: string, productId: string) {
+        log(`🗑️ Removing ${productId} from the cart`);
         const client = await getRedisClient();
         const userKey = `${USER_KEY_PREFIX}${userId}`;
         
@@ -176,7 +182,8 @@ export default class CartRepository {
      * Clear entire cart
      * @param userId - User ID
      */
-    async clearCart(userId: string) {
+    async deleteCartItemsByUserId(userId: string) {
+        log(`🗑️ Emptying the cart of ${userId}`);
         const client = await getRedisClient();
         const userKey = `${USER_KEY_PREFIX}${userId}`;
         

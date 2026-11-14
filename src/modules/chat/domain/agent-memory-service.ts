@@ -1,4 +1,5 @@
 import memoryRepository from '../data/agent-memory-repository.ts';
+import { log } from '#lib/log';
 import type { Attachment } from './attachments.ts';
 
 // The custom memory type and its fields, as configured in the Agent Memory service
@@ -11,7 +12,8 @@ export const CUSTOM_TOPICS = ['dietary_restrictions', 'food_preferences', 'stand
  * @param sessionId - Session ID
  */
 export async function getWorkingMemory(sessionId: string) {
-    return memoryRepository.getWorkingMemory(sessionId);
+    log(`getWorkingMemory ${sessionId}`);
+    return memoryRepository.findWorkingMemoryBySessionId(sessionId);
 }
 
 /**
@@ -19,6 +21,7 @@ export async function getWorkingMemory(sessionId: string) {
  * @param userId - User ID
  */
 export async function listSessionIds(userId: string) {
+    log('listSessionIds');
     return memoryRepository.listSessionIds(userId);
 }
 
@@ -31,7 +34,8 @@ export async function listSessionIds(userId: string) {
  * @param attachments - Content shown with the reply
  */
 export async function addConversationTurn(sessionId: string, userId: string, userMessage: string, assistantReply: string, attachments: Attachment[]) {
-    return memoryRepository.addConversationTurn(sessionId, userId, userMessage, assistantReply, attachments);
+    log('addConversationTurn');
+    return memoryRepository.saveConversationTurn(sessionId, userId, userMessage, assistantReply, attachments);
 }
 
 /**
@@ -40,6 +44,7 @@ export async function addConversationTurn(sessionId: string, userId: string, use
  * @param query - What to search for
  */
 export async function searchLongTermMemories(userId: string, query: string) {
+    log(`searchLongTermMemories "${query.substring(0, 50)}"`);
     return memoryRepository.searchLongTermMemory({ text: query, userId });
 }
 
@@ -50,6 +55,7 @@ export async function searchLongTermMemories(userId: string, query: string) {
  * @param limit - Maximum number of results
  */
 export async function searchShopperPreferences(userId: string, query: string, limit = 5) {
+    log(`searchShopperPreferences "${query.substring(0, 50)}"`);
     return memoryRepository.searchLongTermMemory({ text: query, userId, memoryType: CUSTOM_MEMORY_TYPE, limit });
 }
 
@@ -60,7 +66,8 @@ export async function searchShopperPreferences(userId: string, query: string, li
  * @param topics - Which kinds of preference this is (see CUSTOM_TOPICS)
  */
 export async function saveShopperPreference(userId: string, fact: string, topics: string[]) {
-    return memoryRepository.createLongTermMemories([{
+    log(`saveShopperPreference (${topics.join(', ')})`);
+    return memoryRepository.saveLongTermMemories([{
         text: fact,
         memoryType: CUSTOM_MEMORY_TYPE,
         topics,

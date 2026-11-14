@@ -2,6 +2,7 @@ import { LangCache } from "@redis-ai/langcache";
 import { SearchStrategy } from '@redis-ai/langcache/models/searchstrategy.js';
 
 import CONFIG from '#config';
+import { log } from '#lib/log';
 import type { Attachment } from '../domain/attachments.ts';
 
 /** What is saved in the knowledge bank: a reply, and the products shown with it */
@@ -40,6 +41,7 @@ export default class KnowledgeBankRepository {
         const result = await langCache.search(searchParams);
 
         const cachedResponse = result.data?.[0]?.response;
+        log(`🔍 LangCache search: ${cachedResponse ? 'hit' : 'miss'}`);
         if (!cachedResponse) {
             return null;
         }
@@ -76,6 +78,7 @@ export default class KnowledgeBankRepository {
 
         const result = await langCache.set(cacheParams);
 
+        log(`💾 LangCache entry saved, for ${Math.round(ttlMillis / (60 * 60 * 1000))}h`);
         return result;
     }
 }

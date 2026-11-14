@@ -2,6 +2,8 @@
  * Grocery workflow caching utilities
  */
 
+import { log } from "#lib/log";
+
 // Our own tools whose results are personal or dynamic, or that change something
 const NON_CACHEABLE_TOOLS = [
     'add_to_cart',
@@ -32,7 +34,7 @@ export function determineToolBasedCacheTTL(toolResults: { toolName: string; succ
     // Check if any tool execution failed
     for (const toolResult of toolResults) {
         if (toolResult.success === false) {
-            console.log(`⚠️ Tool failure detected (${toolResult.toolName}), skipping cache`);
+            log(`caching: ${toolResult.toolName} failed, so not cached`);
             return 0; // Don't cache failures
         }
     }
@@ -51,7 +53,7 @@ export function determineToolBasedCacheTTL(toolResults: { toolName: string; succ
     ];
 
     if (recipeTools.some(tool => toolNames.includes(tool))) {
-        console.log(`🍳 Recipe content detected: ${toolNames.filter((toolName) => recipeTools.includes(toolName)).join(', ')}`);
+        log(`caching: recipe content (${toolNames.filter((toolName) => recipeTools.includes(toolName)).join(', ')}), 24h`);
         return 24 * 60 * 60 * 1000; // 24 hours
     }
 
@@ -62,11 +64,11 @@ export function determineToolBasedCacheTTL(toolResults: { toolName: string; succ
     );
 
     if (searchResults.length > 0) {
-        console.log(`🔍 Product search detected: ${searchResults.map(({ toolName }) => toolName).join(', ')}`);
+        log(`caching: product search (${searchResults.map(({ toolName }) => toolName).join(', ')}), 2h`);
         return 2 * 60 * 60 * 1000; // 2 hours
     }
 
     // Default for direct responses or unknown tools
-    console.log(`🤷 Default TTL for tools: ${toolNames.join(', ')}`);
+    log(`caching: default for the tools used (${toolNames.join(', ') || 'none'}), 6h`);
     return 6 * 60 * 60 * 1000; // 6 hours default
 }

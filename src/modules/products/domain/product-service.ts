@@ -2,6 +2,7 @@ import ProductRepository from '../data/product-repository.ts';
 import type { Product } from '../data/product-repository.ts';
 import { AppError, ErrorType } from '#lib/errors';
 import { embed } from '#modules/ai/providers/index';
+import { log } from '#lib/log';
 
 const productRepository = new ProductRepository();
 
@@ -41,6 +42,7 @@ export function getProductImage(category: string) {
  * @param limit - Maximum number of results
  */
 export async function findProductsBySemanticSearch(query: string, limit = 8) {
+    log(`findProductsBySemanticSearch "${query}"`);
     // Generate embedding for the search query
     const queryEmbeddings = await embed([query]);
     const searchVector = queryEmbeddings[0];
@@ -68,17 +70,17 @@ export async function searchProducts({ query, category, maxPrice, minRating, lim
     limit?: number;
     useSemanticSearch?: boolean;
 }) {
+    log(`searchProducts "${query}"`);
     let products: Product[] = [];
 
     // Search strategy decision
     if (query && useSemanticSearch) {
-        console.log('✨🔎 Using semantic search...');
         products = await findProductsBySemanticSearch(query, limit * 2); // Ask for more than needed, so the filters below still leave enough
     }
 
     // Fallback to keyword search if semantic search returns few results
     if (products.length < 3 && query) {
-        console.log('🔍 Supplementing with keyword search...');
+        log('too few results, supplementing with a keyword search');
         const keywordResults = await productRepository.keywordSearchProducts({ query, category, maxPrice, minRating, limit });
 
         // Merge results, avoiding duplicates
@@ -147,5 +149,6 @@ export async function searchProducts({ query, category, maxPrice, minRating, lim
  * @param productId - Product ID
  */
 export async function getProductById(productId: string) {
-    return await productRepository.getProductById(productId);
+    log(`getProductById ${productId}`);
+    return await productRepository.findProductById(productId);
 }

@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { AgentMemory } from '@redis-iris/agent-memory';
 import CONFIG from '#config';
+import { log } from '#lib/log';
 import type { Attachment } from '../domain/attachments.ts';
 
 export type SessionMessage = { role: string; content: string; createdAt?: Date; attachments?: Attachment[] };
@@ -51,10 +52,8 @@ class MemoryRepository {
      * Get session memory (conversation history) for a session
      * @param sessionId - Session identifier (uniquely identifies the conversation)
      */
-    async getWorkingMemory(sessionId: string): Promise<{ messages: SessionMessage[]; summary: string | null }> {
+    async findWorkingMemoryBySessionId(sessionId: string): Promise<{ messages: SessionMessage[]; summary: string | null }> {
         try {
-            console.log(`📥 Fetching session memory for session: ${sessionId}`);
-
             const session = await this.client.getSessionMemory(sessionId);
 
             const messages = (session.events || []).map((event) => ({
@@ -65,9 +64,9 @@ class MemoryRepository {
             }));
             const summary = session.summary?.text || null;
 
-            console.log(`✅ Session memory retrieved: ${messages.length} messages`);
+            log(`📥 Session ${sessionId}: ${messages.length} messages`);
             if (summary) {
-                console.log(`📝 Summary: ${summary.substring(0, 100)}...`);
+                log(`📝 Summary: ${summary.substring(0, 100)}...`);
             }
 
             return { messages, summary };
@@ -86,6 +85,7 @@ class MemoryRepository {
      */
     async listSessionIds(userId: string): Promise<string[]> {
         const result = await this.client.listSessions(100, undefined, userId);
+        log(`📋 ${result.items.length} sessions for ${userId}`);
         return result.items;
     }
 
@@ -97,10 +97,8 @@ class MemoryRepository {
      * @param userId - Actor/owner identifier
      * @param attachments - Content shown with the reply, saved as metadata on the assistant event
      */
-    async addConversationTurn(sessionId: string, userId: string, userMessage: string, assistantReply: string, attachments: Attachment[]) {
+    async saveConversationTurn(sessionId: string, userId: string, userMessage: string, assistantReply: string, attachments: Attachment[]) {
         try {
-            console.log(`💾 Appending conversation turn for session: ${sessionId}`);
-
             const base = { sessionId, namespaceRef: this.namespaceRef };
             const now = Date.now();
 
@@ -121,7 +119,7 @@ class MemoryRepository {
                 ...(attachments?.length && { metadata: { attachments } })
             });
 
-            console.log(`✅ Conversation turn saved`);
+            log(`💾 Conversation turn saved to session ${sessionId}`);
         } catch (error) {
             console.error('❌ Error saving conversation turn:', (error as Error).message);
             throw error;
@@ -136,8 +134,6 @@ class MemoryRepository {
         try {
             const { text, limit = 15, userId, memoryType } = params;
 
-            console.log(`🔍 Searching long-term memory: "${text?.substring(0, 50)}..."`);
-
             const filter = {
                 ...(userId && { ownerId: { eq: userId } }),
                 ...(memoryType && { memoryType: { eq: memoryType } }),
@@ -151,7 +147,7 @@ class MemoryRepository {
             });
 
             const count = results.items?.length || 0;
-            console.log(`✅ Found ${count} relevant memories`);
+            log(`🔍 Long-term memory "${text?.substring(0, 50)}": ${count} found`);
 
             return results.items || [];
         } catch (error) {
@@ -164,10 +160,8 @@ class MemoryRepository {
      * Create long-term memories
      * @param memories - Array of {text, topics, userId, id?, memoryType?, attributes?}
      */
-    async createLongTermMemories(memories: LongTermMemoryInput[]) {
+    async saveLongTermMemories(memories: LongTermMemoryInput[]) {
         try {
-            console.log(`💾 Creating ${memories.length} long-term memories`);
-
             await this.client.bulkCreateLongTermMemories({
                 memories: memories.map((mem) => ({
                     id: mem.id || randomUUID(),
@@ -180,7 +174,7 @@ class MemoryRepository {
                 }))
             });
 
-            console.log(`✅ Long-term memories created successfully`);
+            log(`💾 ${memories.length} long-term memories saved`);
         } catch (error) {
             const sdkError = error as Error & { statusCode?: number; body?: unknown };
             console.error('❌ Error creating long-term memories:', sdkError.message);

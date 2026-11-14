@@ -1,4 +1,5 @@
 import { getRedisClient } from '#modules/db/redis-client';
+import { log } from '#lib/log';
 
 /** Products are stored as JSON under a key made of this prefix and the product ID */
 export const PRODUCT_KEY_PREFIX = 'products:';
@@ -70,7 +71,7 @@ export default class ProductRepository {
                 semanticScore: similarity
             });
         }
-        console.log(`Found ${products.length} products`);
+        log(`🔍 Vector search: ${products.length} products`);
         return products;
     }
 
@@ -127,6 +128,7 @@ export default class ProductRepository {
             }
         }
         
+        log(`🔍 Keyword search: ${products.length} products`);
         return products;
     }
 
@@ -134,9 +136,10 @@ export default class ProductRepository {
      * Get product by ID
      * @param productId - The product ID
      */
-    async getProductById(productId: string): Promise<Product | null> {
+    async findProductById(productId: string): Promise<Product | null> {
         const client = await getRedisClient();
         const product = await client.json.get(`${PRODUCT_KEY_PREFIX}${productId}`, { path: '$' }) as Product[] | null;
+        log(`📦 Product ${productId}: ${product ? 'found' : 'not found'}`);
         return product ? product[0] : null;
     }
 
@@ -144,7 +147,7 @@ export default class ProductRepository {
      * Get multiple products by IDs
      * @param productIds - Array of product IDs
      */
-    async getProductsByIds(productIds: string[]): Promise<Product[]> {
+    async findProductsByIds(productIds: string[]): Promise<Product[]> {
         const client = await getRedisClient();
         const products: Product[] = [];
         const pipeline = client.multi();
@@ -165,6 +168,7 @@ export default class ProductRepository {
             }
         });
         
+        log(`📦 ${products.length} of ${productIds.length} products found`);
         return products;
     }
 
@@ -173,7 +177,7 @@ export default class ProductRepository {
      * @param category - Category name
      * @param limit - Number of products to return
      */
-    async getProductsByCategory(category: string, limit = 20): Promise<Product[]> {
+    async findProductsByCategory(category: string, limit = 20): Promise<Product[]> {
         const client = await getRedisClient();
         const results = await client.ft.search('idx:products', `@category:{${category}}`, {
             LIMIT: { from: 0, size: limit },
@@ -192,6 +196,7 @@ export default class ProductRepository {
             }
         }
         
+        log(`📦 Category "${category}": ${products.length} products`);
         return products;
     }
 }

@@ -1,6 +1,7 @@
 import { tool } from "@langchain/core/tools";
 import { z } from "zod";
 import { getWorkingMemory, searchShopperPreferences, saveShopperPreference, CUSTOM_TOPICS } from "#modules/chat/domain/agent-memory-service";
+import { log } from "#lib/log";
 
 /**
  * Tool: Search My Memories
@@ -14,8 +15,7 @@ export const searchMemoriesTool = tool(
     async ({ query }, config) => {
         const userId = config?.configurable?.userId;
         
-        console.log(`\n🔍 [TOOL] search_my_memories called`);
-        console.log(`   Query: "${query}"`);
+        log(`${config.toolCall?.name}: "${query}"`);
         
         try {
             const memories = await searchShopperPreferences(userId, query);
@@ -71,9 +71,7 @@ export const saveMemoryTool = tool(
     async ({ fact, topics }, config) => {
         const userId = config?.configurable?.userId;
         
-        console.log(`\n💾 [TOOL] save_memory called`);
-        console.log(`   Fact: "${fact}"`);
-        console.log(`   Topics: ${topics.join(', ')}`);
+        log(`${config.toolCall?.name}: "${fact}" (${topics.join(', ')})`);
         
         try {
             await saveShopperPreference(userId, fact, topics);
@@ -116,7 +114,7 @@ export const viewRecentConversationTool = tool(
     async ({}, config) => {
         const sessionId = config?.configurable?.sessionId;
         
-        console.log(`\n📝 [TOOL] view_recent_conversation called`);
+        log(`${config.toolCall?.name}`);
         
         try {
             const workingMemory = await getWorkingMemory(sessionId);
